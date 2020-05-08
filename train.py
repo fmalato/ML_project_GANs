@@ -1,9 +1,13 @@
 import numpy as np
+import os, re
 
 from nets import FCNN
 from PIL import Image
 from math import floor
-from matplotlib import cm
+from torch.utils.data import DataLoader
+from torchsummary import summary
+
+from dataset import COCO
 
 def PixelWiseMSELoss(input, target):
     # 1/whc * sum(w,h,c)(Iestwhc - Ihrwhc)**2
@@ -20,29 +24,41 @@ def loadimg(fn, scale=4):
     img = img.resize((w//scale, h//scale), Image.ANTIALIAS)
     return np.array(img)/255
 
+def short_side(img):
+    w, h = img.size
+    if w < h:
+        return w
+    else:
+        return h
+
+def crop_central_square(img):
+    w, h = img.size
+    if w < h:
+        return img.crop((0, floor((h - w) / 2), w, floor(((h - w) / 2) + w)))
+    else:
+        return img.crop((floor((w - h) / 2), 0, floor(((w - h) / 2) + h), h))
+
 
 if __name__ == '__main__':
-    #net = FCNN(input_channels=3)
-    orig = Image.open('train2014/COCO_train2014_000000000078.jpg')
-    width, height = orig.size  # Get dimensions
-    new_width = 256
-    new_height = 256
+    """net = FCNN(input_channels=3)
+    summary(net, input_size=(3, 32, 32))"""
+    #data_train = COCO(root_dir='data/')
 
-    left = (width - new_width) / 2
-    top = (height - new_height) / 2
-    right = (width + new_width) / 2
-    bottom = (height + new_height) / 2
+    imgs = os.listdir('train2014/')
+    scale = 4
 
-    # Crop the center of the image
-    im = orig.crop((left, top, right, bottom))
-    print(orig.size)
-    # Resizing the image
-    img = loadimg('train2014/COCO_train2014_000000000078.jpg', scale=4)
-    img = Image.fromarray(np.uint8(img*255))
-    # Testing
-    orig.show()
-    im.show()
-    img.show()
-    print(img.size)
+    for i in range(80000, 90000):
+        orig = Image.open('train2014/{x}'.format(x=imgs[i]))
+        if short_side(orig) >= 384:
+            #print('Opening {x}'.format(x=imgs[i]))
+            width, height = orig.size  # Get dimensions
+            img = crop_central_square(orig)
+            i_hr = img.resize((256, 256), Image.ANTIALIAS)
+            i_lr = img.resize((int(256 / scale), int(256 / scale)))
+            name = re.sub('\.jpg$', '', imgs[i])
+            name = name.replace('COCO_train2014_', '')
+            os.mkdir('data/{x}'.format(x=name))
+            i_hr.save('data/{x}/hr.jpg'.format(x=name), 'JPEG')
+            i_lr.save('data/{x}/lr.jpg'.format(x=name), 'JPEG')
 
 

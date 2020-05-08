@@ -7,17 +7,20 @@ class ResidualBlock(nn.Module):
         super().__init__()
         self.in_channels, self.out_channels = in_channels, out_channels
         self.blocks = nn.Sequential(OrderedDict([
-            ('c1', nn.Conv2d(64, 64, kernel_size=(3, 3))),
+            ('c1', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
             ('relu1', nn.ReLU()),
-            ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3)))
+            ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1)))
             ]))
         self.shortcut = nn.Conv2d(64, 64, kernel_size=(3, 3))
 
     def forward(self, x):
         residual = x
+        print('x1:', x.shape)
         if self.should_apply_shortcut:
             residual = self.shortcut(x)
         x = self.blocks(x)
+        print('residual:', residual.shape)
+        print('x2:', x.shape)
         x += residual
         return x
 
@@ -33,7 +36,7 @@ class FCNN(nn.Module):
         self.input_channels = input_channels
 
         self.conv1 = nn.Sequential(OrderedDict([
-            ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3))),
+            ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3), padding=(1, 1))),
             ('relu1', nn.ReLU())
         ]))
         self.residual = nn.Sequential(OrderedDict([
@@ -50,20 +53,20 @@ class FCNN(nn.Module):
         ]))
         self.upsamp1 = nn.Sequential(OrderedDict([
             ('up1ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
-            ('up1conv', nn.Conv2d(64, 64, kernel_size=(3, 3))),
+            ('up1conv', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
             ('up1relu', nn.ReLU())
         ]))
         self.upsamp2 = nn.Sequential(OrderedDict([
             ('up2ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
-            ('up2conv', nn.Conv2d(64, 64, kernel_size=(3, 3))),
+            ('up2conv', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
             ('up2relu', nn.ReLU())
         ]))
         self.conv2 = nn.Sequential(OrderedDict([
-            ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3))),
+            ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
             ('relu2', nn.ReLU())
         ]))
         self.conv3 = nn.Sequential(OrderedDict([
-            ('c3', nn.Conv2d(64, 3, kernel_size=(3, 3)))
+            ('c3', nn.Conv2d(64, 3, kernel_size=(3, 3), padding=(1, 1)))
         ]))
 
     def forward(self, x):
