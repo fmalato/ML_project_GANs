@@ -6,8 +6,11 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.in_channels, self.out_channels = in_channels, out_channels
-        self.blocks = nn.Conv2d(64, 64, kernel_size=(3, 3))
-        self.activate = nn.ReLU()
+        self.blocks = nn.Sequential(OrderedDict([
+            ('c1', nn.Conv2d(64, 64, kernel_size=(3, 3))),
+            ('relu1', nn.ReLU()),
+            ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3)))
+            ]))
         self.shortcut = nn.Conv2d(64, 64, kernel_size=(3, 3))
 
     def forward(self, x):
@@ -16,7 +19,6 @@ class ResidualBlock(nn.Module):
             residual = self.shortcut(x)
         x = self.blocks(x)
         x += residual
-        x = self.activate(x)
         return x
 
     @property
@@ -47,13 +49,14 @@ class FCNN(nn.Module):
             ('res10', ResidualBlock(64, 64))
         ]))
         self.upsamp1 = nn.Sequential(OrderedDict([
-            ('up1ctrans', nn.ConvTranspose2d(64, 64, kernel_size=(3, 3))),
+            ('up1ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
+            ('up1conv', nn.Conv2d(64, 64, kernel_size=(3, 3))),
             ('up1relu', nn.ReLU())
         ]))
         self.upsamp2 = nn.Sequential(OrderedDict([
-            ('up2ctrans', nn.ConvTranspose2d(64, 64, kernel_size=(3, 3))),
-            ('up2relu', nn.ReLU()),
-            ('up2conv', nn.Conv2d(64, 64, kernel_size=(3, 3)))
+            ('up2ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
+            ('up2conv', nn.Conv2d(64, 64, kernel_size=(3, 3))),
+            ('up2relu', nn.ReLU())
         ]))
         self.conv2 = nn.Sequential(OrderedDict([
             ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3))),
@@ -65,9 +68,9 @@ class FCNN(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        res = self.residual(x)
-        x = self.upsamp1(res)
+        x = self.residual(x)
+        x = self.upsamp1(x)
         x = self.upsamp2(x)
         x = self.conv2(x)
         x = self.conv3(x)
-        return x + res
+        return x
