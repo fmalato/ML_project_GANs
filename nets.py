@@ -15,12 +15,9 @@ class ResidualBlock(nn.Module):
 
     def forward(self, x):
         residual = x
-        print('x1:', x.shape)
         if self.should_apply_shortcut:
             residual = self.shortcut(x)
         x = self.blocks(x)
-        print('residual:', residual.shape)
-        print('x2:', x.shape)
         x += residual
         return x
 
