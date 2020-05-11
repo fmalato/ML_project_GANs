@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 
 from nets import FCNN
 from PIL import Image
@@ -12,6 +13,8 @@ from math import floor
 from torch.utils.data import DataLoader
 from torchsummary import summary
 from torch import FloatTensor
+from torchvision import datasets
+from torchvision.datasets import ImageFolder
 
 from dataset import COCO
 
@@ -46,20 +49,19 @@ def crop_central_square(img):
 
 def generate_dataset(scale=4):
     imgs = os.listdir('train2014/')
+    os.mkdir('data/train')
+    os.mkdir('data/target')
 
     for i in range(90000):
         orig = Image.open('train2014/{x}'.format(x=imgs[i]))
-        if short_side(orig) >= 384:
-            # print('Opening {x}'.format(x=imgs[i]))
-            width, height = orig.size  # Get dimensions
+        if short_side(orig) >= 384 and orig.layers == 3:
             img = crop_central_square(orig)
             i_hr = img.resize((256, 256), Image.ANTIALIAS)
             i_lr = img.resize((int(256 / scale), int(256 / scale)))
             name = re.sub('\.jpg$', '', imgs[i])
             name = name.replace('COCO_train2014_', '')
-            os.mkdir('data/{x}'.format(x=name))
-            i_hr.save('data/{x}/hr.jpg'.format(x=name), 'JPEG')
-            i_lr.save('data/{x}/lr.jpg'.format(x=name), 'JPEG')
+            i_hr.save('data/target/{x}.jpg'.format(x=name), 'JPEG')
+            i_lr.save('data/train/{x}.jpg'.format(x=name), 'JPEG')
 
 def square_patch(img_path, size=32):
     img = Image.open(img_path)
@@ -74,53 +76,67 @@ def square_patch(img_path, size=32):
 def train(net, criterion, optimizer, epoch, batch_size=16, steps=50):
     net.train()
     # TODO: how to use this on the GPU via ssh?
-    images = os.listdir('data/')
+    losses = []
+    data = COCO('data/train/', 'data/target/')
+    data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     for e in range(epoch):
-        print('Epoch %d' % (e))
+        print('Epoch %d' % e)
         for h in range(steps):
             avg_loss = 0
-            data = []
-            gt = []
-            for n in range(batch_size):
-                idx = random.randint(0, len(images))
-                res_d = square_patch('data/{x}/lr.jpg'.format(x=images[idx]), 32)
-                res_g = square_patch('data/{x}/hr.jpg'.format(x=images[idx]), 128)
-                print(idx)
-                for x in res_d:
-                    data.append(x)
-                for x in res_g:
-                    gt.append(x)
+            loss_list, batch_list = [], []
 
-            for i in range(len(data)):
-                # TODO: random dimensional error sometimes, maybe a bad image?
+            for i, (images, targets) in enumerate(data_loader):
+
                 optimizer.zero_grad()
-                input = FloatTensor(np.array(data[i]))
-                input = input.view((-1, 3, 32, 32))
-                output = net(input)
-                target = FloatTensor(np.array(gt[i]))
-                target = target.view((-1, 3, 128, 128))
-                loss = (1 / (3 * 32 * 32)) * criterion(output, target)
-                avg_loss += loss.detach().item()
+
+                output = net(images)
+                loss = criterion(output, targets)
+                avg_loss += loss
+
+                loss_list.append(loss.detach().item())
+                batch_list.append(i + 1)
+
+                losses.append(loss.detach().item())
+
                 loss.backward()
                 optimizer.step()
 
-            print('Epoch: %d - Step: %d, Avg. Loss: %f' % (e, h, avg_loss / (batch_size * 4)))
+            print('Epoch: %d - Step: %d, Avg. Loss: %f' % (e, h, avg_loss / batch_size))
 
         print('Saving checkpoint.')
-        torch.save(net.state_dict(), 'state_{d}e_50s.pth'.format(d=e))
-    trans = transforms.ToPILImage()
-    out = trans(output.view((3, 128, 128)))
-    out.show()
-    target = trans(target.view((3, 128, 128)))
-    target.show()
+        torch.save(net.state_dict(), 'state_{d}e_50s.pth'.format(d=e+1))
+
+    plt.plot(range(len(losses)), losses)
+    plt.show()
+
+def load_data(data_folder, batch_size, train, kwargs):
+    transform = {
+        'train': transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.47614917, 0.45001204, 0.40904046],
+                                     std=[0.229, 0.224, 0.225])
+            ]),
+        'test': transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.47614917, 0.45001204, 0.40904046],
+                                     std=[0.229, 0.224, 0.225])
+            ])
+        }
+    data = datasets.ImageFolder(root=data_folder, transform=transform['train' if train else 'test'])
+    data_loader = torch.utils.data.DataLoader(data,
+                                              batch_size=batch_size,
+                                              shuffle=True, **kwargs, 
+                                              drop_last=True if train else False)
+    return data_loader
 
 
 if __name__ == '__main__':
     net = FCNN(input_channels=3)
     summary(net, input_size=(3, 32, 32))
 
-    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), epoch=20, batch_size=4)
-
+    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), epoch=15, batch_size=4, steps=50)
 
 
 
