@@ -30,7 +30,9 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     img = Image.open('data/train/000000000034.jpg')
-    net.load_state_dict(torch.load('im_a_genius.pth'))
+    net.load_state_dict(torch.load('state_150e_50s.pth', map_location=torch.device('cpu')))
+    test_single(net, 'data/')
+    net.load_state_dict(torch.load('im_a_genius.pth', map_location=torch.device('cpu')))
     test_single(net, 'data/')
     img.show()
 
