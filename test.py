@@ -19,21 +19,21 @@ def test_single(net, image_folder):
     trans = transforms.ToPILImage(mode='RGB')
     output = output.view((3, 256, 256))
     output = trans(output)
-    target = Image.open(image_folder + 'target/000000000034.jpg')
-    target = tens(target)
-    target = trans(target)
     output.show()
-    target.show()
 
 
 if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     img = Image.open('data/train/000000000034.jpg')
-    net.load_state_dict(torch.load('state_150e_50s.pth', map_location=torch.device('cpu')))
+    target = Image.open('data/target/000000000034.jpg')
+    net.load_state_dict(torch.load('state_1800e_50s.pth', map_location=torch.device('cpu')))
     test_single(net, 'data/')
-    net.load_state_dict(torch.load('im_a_genius.pth', map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load('state_300e_50s_1batch_1e-4.pth', map_location=torch.device('cpu')))
+    test_single(net, 'data/')
+    net.load_state_dict(torch.load('state_800e_50s.pth', map_location=torch.device('cpu')))
     test_single(net, 'data/')
     img.show()
+    target.show()
 
 
