@@ -19,19 +19,17 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
         print('Epoch %d.' % e)
 
         for i, (images, targets) in enumerate(data_loader):
-            avg_loss = 0
             optimizer.zero_grad()
 
             output = net(images.to(device))
             loss = criterion(output, targets.to(device)).cuda()
-            avg_loss += loss
 
             losses.append(loss.detach().cuda().item())
 
             loss.backward()
             optimizer.step()
 
-            print('Step: %d - Avg. Loss: %f' % (i, avg_loss / batch_size))
+            print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
 
         print('Saving checkpoint.')
         torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e+1))
@@ -48,19 +46,17 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
         print('Epoch %d' % (e + starting_epoch))
 
         for i, (images, targets) in enumerate(data_loader):
-            avg_loss = 0
             optimizer.zero_grad()
 
             output = net(images.to(device))
             loss = criterion(output, targets.to(device)).cuda()
-            avg_loss += loss
 
             losses.append(loss.detach().cuda().item())
 
             loss.backward()
             optimizer.step()
 
-            print('Step: %d - Avg. Loss: %f' % (i, avg_loss / batch_size))
+            print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
 
         if (e+1) % 5 == 0:
             print('Saving checkpoint.')
