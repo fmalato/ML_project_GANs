@@ -39,16 +39,24 @@ def test_single(net, image_folder, image_name, criterion):
 
 if __name__ == '__main__':
 
-    net = FCNN(input_channels=3)
+    """net = FCNN(input_channels=3)
     avg_psnr = 0
     for image_name in os.listdir('evaluation/Set5/lr'):
         img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
         target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
-        net.load_state_dict(torch.load('state_10e.pth', map_location=torch.device('cpu')))
+        net.load_state_dict(torch.load('state_15e.pth', map_location=torch.device('cpu')))
         avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
         #img.show(title="Input")
-        #target.show(title="Target")
+        target.show(title="Target")
     avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
-    print('Average psnr score is: %f' % avg_psnr)
+    print('Average psnr score is: %f' % avg_psnr)"""
+    up = nn.Upsample(scale_factor=4, mode='bilinear')
+    orig = Image.open('evaluation/Set5/lr/woman.png')
+    trans = transforms.ToTensor()
+    img = up(trans(orig).view((1, 3, 64, 64)))
+    pil = transforms.ToPILImage()
+    res = pil(img.view(3, 256, 256))
+    orig.show()
+    res.show()
 
 

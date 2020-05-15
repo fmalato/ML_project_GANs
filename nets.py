@@ -31,7 +31,7 @@ class FCNN(nn.Module):
     def __init__(self, input_channels=3):
         super().__init__()
         self.input_channels = input_channels
-        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bicubic')
+        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bilinear')
 
         self.conv1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3), padding=(1, 1))),
