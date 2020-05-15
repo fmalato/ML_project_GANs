@@ -73,38 +73,36 @@ def square_patch(img_path, size=32):
             patches.append(img.crop((i * size, j * size, (i + 1) * size, (j + 1) * size)))
     return patches
 
-def train(net, criterion, optimizer, device, steps, batch_size=16):
+def train(net, criterion, optimizer, device, epochs, batch_size=16):
     net.train()
 
     losses = []
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
-    for e in range(steps):
-        
-        avg_loss = 0
+    for e in range(epochs):
+
         loss_list, batch_list = [], []
 
         for i, (images, targets) in enumerate(data_loader):
-
+            avg_loss = 0
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = criterion(output, targets.to(device)).cuda()
+            loss = criterion(output, targets.to(device))
             avg_loss += loss
 
-            loss_list.append(loss.detach().cuda().item())
+            loss_list.append(loss.detach().item())
             batch_list.append(i + 1)
 
-            losses.append(loss.detach().cuda().item())
+            losses.append(loss.detach().item())
 
             loss.backward()
             optimizer.step()
 
-        print('Step: %d - Avg. Loss: %f' % (e, avg_loss / batch_size))
+            print('Step: %d - Avg. Loss: %f' % (i, avg_loss / batch_size))
 
-        if (e+1) % 1000 == 0:
-            print('Saving checkpoint.')
-            torch.save(net.state_dict(), 'state_{d}s.pth'.format(d=e+1))
+        print('Saving checkpoint.')
+        torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e+1))
 
 
 def load_data(data_folder, batch_size, train, kwargs):
@@ -150,10 +148,10 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, steps, s
             loss = criterion(output, targets.to(device))
             avg_loss += loss
 
-            loss_list.append(loss.detach().cuda().item())
+            loss_list.append(loss.detach().item())
             batch_list.append(i + 1)
 
-            losses.append(loss.detach().cuda().item())
+            losses.append(loss.detach().item())
 
             loss.backward()
             optimizer.step()
@@ -165,12 +163,11 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, steps, s
 
 if __name__ == '__main__':
     net = FCNN(input_channels=3)
-    net.cuda()
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
    # resume_training('state_350e_50s.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), 250, 350, device, batch_size=32, steps=50)
-    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, steps=10000, batch_size=64)
+    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=64)
 
 
 
