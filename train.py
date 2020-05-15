@@ -73,39 +73,38 @@ def square_patch(img_path, size=32):
             patches.append(img.crop((i * size, j * size, (i + 1) * size, (j + 1) * size)))
     return patches
 
-def train(net, criterion, optimizer, epoch, device, batch_size=16, steps=50):
+def train(net, criterion, optimizer, device, steps, batch_size=16):
     net.train()
 
     losses = []
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
-    for e in range(epoch):
-        print('Epoch %d' % e)
-        for h in range(steps):
-            avg_loss = 0
-            loss_list, batch_list = [], []
+    for e in range(steps):
+        
+        avg_loss = 0
+        loss_list, batch_list = [], []
 
-            for i, (images, targets) in enumerate(data_loader):
+        for i, (images, targets) in enumerate(data_loader):
 
-                optimizer.zero_grad()
+            optimizer.zero_grad()
 
-                output = net(images.to(device))
-                loss = criterion(output, targets.to(device)).cuda()
-                avg_loss += loss
+            output = net(images.to(device))
+            loss = criterion(output, targets.to(device)).cuda()
+            avg_loss += loss
 
-                loss_list.append(loss.detach().cuda().item())
-                batch_list.append(i + 1)
+            loss_list.append(loss.detach().cuda().item())
+            batch_list.append(i + 1)
 
-                losses.append(loss.detach().cuda().item())
+            losses.append(loss.detach().cuda().item())
 
-                loss.backward()
-                optimizer.step()
+            loss.backward()
+            optimizer.step()
 
-            print('Epoch: %d - Step: %d, Avg. Loss: %f' % (e, h, avg_loss / batch_size))
+        print('Step: %d - Avg. Loss: %f' % (e, avg_loss / batch_size))
 
-        if (e+1) % 50 == 0:
+        if (e+1) % 1000 == 0:
             print('Saving checkpoint.')
-            torch.save(net.state_dict(), 'state_{d}e_50s.pth'.format(d=e+1))
+            torch.save(net.state_dict(), 'state_{d}s.pth'.format(d=e+1))
 
 
 def load_data(data_folder, batch_size, train, kwargs):
@@ -130,37 +129,39 @@ def load_data(data_folder, batch_size, train, kwargs):
                                               drop_last=True if train else False)
     return data_loader
 
-def resume_training(state_dict_path, net, criterion, optimizer, epoch, device, batch_size=16, steps=50):
+def resume_training(state_dict_path, net, criterion, optimizer, device, steps, starting_step, batch_size=16):
     net.train()
+    print('Loading state_dict.')
     net.load_state_dict(torch.load(state_dict_path))
     losses = []
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
-    for e in range(epoch):
-        print('Epoch %d' % e)
-        for h in range(steps):
-            avg_loss = 0
-            loss_list, batch_list = [], []
+    print('Resuming training from step %d.' % starting_step)
+    for e in range(steps):
+        print('Step %d' % (e + starting_step))
+        
+        avg_loss = 0
+        loss_list, batch_list = [], []
 
-            for i, (images, targets) in enumerate(data_loader):
-                optimizer.zero_grad()
+        for i, (images, targets) in enumerate(data_loader):
+            optimizer.zero_grad()
 
-                output = net(images.to(device))
-                loss = criterion(output, targets.to(device))
-                avg_loss += loss
+            output = net(images.to(device))
+            loss = criterion(output, targets.to(device))
+            avg_loss += loss
 
-                loss_list.append(loss.detach().cuda().item())
-                batch_list.append(i + 1)
+            loss_list.append(loss.detach().cuda().item())
+            batch_list.append(i + 1)
 
-                losses.append(loss.detach().cuda().item())
+            losses.append(loss.detach().cuda().item())
 
-                loss.backward()
-                optimizer.step()
+            loss.backward()
+            optimizer.step()
 
-            print('Epoch: %d - Step: %d, Avg. Loss: %f' % (e, h, avg_loss / batch_size))
-
-        print('Saving checkpoint.')
-        torch.save(net.state_dict(), 'state_{d}e_50s.pth'.format(d=e + 1))
+            #print('Step: %d - Avg. Loss: %f' % (e + starting_step, avg_loss / batch_size))
+        if (e+1) % 100 == 0:
+            print('Saving checkpoint.')
+            torch.save(net.state_dict(), 'state_{d}s.pth'.format(d=e + starting_step + 1))
 
 if __name__ == '__main__':
     net = FCNN(input_channels=3)
@@ -168,8 +169,8 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), 150, device, batch_size=4, steps=50)
-
+   # resume_training('state_350e_50s.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), 250, 350, device, batch_size=32, steps=50)
+    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, steps=10000, batch_size=64)
 
 
 
