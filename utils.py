@@ -1,6 +1,11 @@
 import random
 import os, re
+import torch
 
+import torchvision.transforms as transforms
+import numpy as np
+
+from torchvision import datasets
 from math import floor
 from PIL import Image
 
@@ -46,3 +51,46 @@ def crop_central_square(img):
         return img.crop((0, floor((h - w) / 2), w, floor(((h - w) / 2) + w)))
     else:
         return img.crop((floor((w - h) / 2), 0, floor(((w - h) / 2) + h), h))
+
+def load_data(data_folder, batch_size, train, kwargs):
+    transform = {
+        'train': transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.47614917, 0.45001204, 0.40904046],
+                                     std=[0.229, 0.224, 0.225])
+            ]),
+        'test': transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.47614917, 0.45001204, 0.40904046],
+                                     std=[0.229, 0.224, 0.225])
+            ])
+        }
+    data = datasets.ImageFolder(root=data_folder, transform=transform['train' if train else 'test'])
+    data_loader = torch.utils.data.DataLoader(data,
+                                              batch_size=batch_size,
+                                              shuffle=True, **kwargs,
+                                              drop_last=True if train else False)
+    return data_loader
+
+def loadimg(fn, scale=4):
+    try:
+        img = Image.open(fn).convert('RGB')
+    except IOError:
+        return None
+    w, h = img.size
+    img.crop((0, 0, floor(w/scale), floor(h/scale)))
+    img = img.resize((w//scale, h//scale), Image.ANTIALIAS)
+    return np.array(img)/255
+
+
+def square_patch(img_path, size=32):
+    img = Image.open(img_path)
+    patches = []
+    scale = int(img.size[0] / size)
+    # Quadratic time, but since it will be used to scale 64x64 images to 32x32 patches, it's viable.
+    for i in range(scale):
+        for j in range(scale):
+            patches.append(img.crop((i * size, j * size, (i + 1) * size, (j + 1) * size)))
+    return patches
