@@ -81,20 +81,15 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     for e in range(epochs):
 
-        loss_list, batch_list = [], []
-
         for i, (images, targets) in enumerate(data_loader):
             avg_loss = 0
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = criterion(output, targets.to(device))
+            loss = criterion(output, targets.to(device)).cuda()
             avg_loss += loss
 
-            loss_list.append(loss.detach().item())
-            batch_list.append(i + 1)
-
-            losses.append(loss.detach().item())
+            losses.append(loss.detach().cuda().item())
 
             loss.backward()
             optimizer.step()
@@ -145,13 +140,10 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, steps, s
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = criterion(output, targets.to(device))
+            loss = criterion(output, targets.to(device)).cuda()
             avg_loss += loss
 
-            loss_list.append(loss.detach().item())
-            batch_list.append(i + 1)
-
-            losses.append(loss.detach().item())
+            losses.append(loss.detach().cuda().item())
 
             loss.backward()
             optimizer.step()
@@ -163,6 +155,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, steps, s
 
 if __name__ == '__main__':
     net = FCNN(input_channels=3)
+    net.cuda()
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
