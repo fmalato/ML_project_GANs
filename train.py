@@ -33,35 +33,6 @@ def loadimg(fn, scale=4):
     img = img.resize((w//scale, h//scale), Image.ANTIALIAS)
     return np.array(img)/255
 
-def short_side(img):
-    w, h = img.size
-    if w < h:
-        return w
-    else:
-        return h
-
-def crop_central_square(img):
-    w, h = img.size
-    if w < h:
-        return img.crop((0, floor((h - w) / 2), w, floor(((h - w) / 2) + w)))
-    else:
-        return img.crop((floor((w - h) / 2), 0, floor(((w - h) / 2) + h), h))
-
-def generate_dataset(scale=4):
-    imgs = os.listdir('train2014/')
-    os.mkdir('data/train')
-    os.mkdir('data/target')
-
-    for i in range(90000):
-        orig = Image.open('train2014/{x}'.format(x=imgs[i]))
-        if short_side(orig) >= 384 and orig.layers == 3:
-            img = crop_central_square(orig)
-            i_hr = img.resize((256, 256), Image.ANTIALIAS)
-            i_lr = img.resize((int(256 / scale), int(256 / scale)))
-            name = re.sub('\.jpg$', '', imgs[i])
-            name = name.replace('COCO_train2014_', '')
-            i_hr.save('data/target/{x}.jpg'.format(x=name), 'JPEG')
-            i_lr.save('data/train/{x}.jpg'.format(x=name), 'JPEG')
 
 def square_patch(img_path, size=32):
     img = Image.open(img_path)
@@ -80,6 +51,7 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     for e in range(epochs):
+        print('Epoch %d.' % e)
 
         for i, (images, targets) in enumerate(data_loader):
             avg_loss = 0
@@ -122,21 +94,19 @@ def load_data(data_folder, batch_size, train, kwargs):
                                               drop_last=True if train else False)
     return data_loader
 
-def resume_training(state_dict_path, net, criterion, optimizer, device, steps, starting_step, batch_size=16):
+def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, starting_epoch, batch_size=16):
     net.train()
     print('Loading state_dict.')
     net.load_state_dict(torch.load(state_dict_path))
     losses = []
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
-    print('Resuming training from step %d.' % starting_step)
-    for e in range(steps):
-        print('Step %d' % (e + starting_step))
-        
-        avg_loss = 0
-        loss_list, batch_list = [], []
+    print('Resuming training from epoch %d.' % starting_epoch)
+    for e in range(epochs):
+        print('Epoch %d' % (e + starting_epoch))
 
         for i, (images, targets) in enumerate(data_loader):
+            avg_loss = 0
             optimizer.zero_grad()
 
             output = net(images.to(device))
@@ -148,10 +118,11 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, steps, s
             loss.backward()
             optimizer.step()
 
-            #print('Step: %d - Avg. Loss: %f' % (e + starting_step, avg_loss / batch_size))
-        if (e+1) % 100 == 0:
+            print('Step: %d - Avg. Loss: %f' % (i, avg_loss / batch_size))
+
+        if (e+1) % 5 == 0:
             print('Saving checkpoint.')
-            torch.save(net.state_dict(), 'state_{d}s.pth'.format(d=e + starting_step + 1))
+            torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
 
 if __name__ == '__main__':
     net = FCNN(input_channels=3)
@@ -159,7 +130,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-   # resume_training('state_350e_50s.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), 250, 350, device, batch_size=32, steps=50)
+    resume_training('state_10e.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), 10, 10, device, batch_size=64)
     train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=64)
 
 
