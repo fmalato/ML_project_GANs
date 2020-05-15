@@ -6,14 +6,14 @@ from PIL import Image
 def random_crop(image, target, image_max_range=32, target_scale=4):
     crop_x = random.randint(0, image_max_range)
     crop_y = random.randint(0, image_max_range)
-    image = image.crop(crop_x,
+    image = image.crop((crop_x,
                        crop_y,
                        crop_x + image_max_range,
                        crop_y + image_max_range
-                       )
-    target = target.crop(crop_x * target_scale,
+                        ))
+    target = target.crop((crop_x * target_scale,
                          crop_y * target_scale,
                          (crop_x + image_max_range) * target_scale,
                          (crop_y + image_max_range) * target_scale
-                         )
+                          ))
     return image, target
