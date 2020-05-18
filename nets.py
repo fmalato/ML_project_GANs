@@ -6,24 +6,19 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.in_channels, self.out_channels = in_channels, out_channels
-        self.blocks = nn.Sequential(OrderedDict([
+        self.block1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
             ('relu1', nn.ReLU()),
-            ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1)))
             ]))
-        self.shortcut = nn.Conv2d(64, 64, kernel_size=(3, 3))
+        self.block2 = nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))
+
 
     def forward(self, x):
         residual = x
-        if self.should_apply_shortcut:
-            residual = self.shortcut(x)
-        x = self.blocks(x)
+        x = self.block1(x)
+        x = self.block2(x)
         x += residual
         return x
-
-    @property
-    def should_apply_shortcut(self):
-        return self.in_channels != self.out_channels
 
 
 class FCNN(nn.Module):
@@ -31,7 +26,7 @@ class FCNN(nn.Module):
     def __init__(self, input_channels=3):
         super().__init__()
         self.input_channels = input_channels
-        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bicubic')
+        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bilinear')
 
         self.conv1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3), padding=(1, 1))),
