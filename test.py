@@ -39,8 +39,8 @@ def test_single(net, image_folder, image_name, criterion):
 
 if __name__ == '__main__':
 
-    net = FCNN(input_channels=3)
-    net.load_state_dict(torch.load('state_10e_1e-7.pth', map_location=torch.device('cpu')))
+    """net = FCNN(input_channels=3)
+    net.load_state_dict(torch.load('state_30e.pth', map_location=torch.device('cpu')))
     net.eval()
     avg_psnr = 0
     for image_name in os.listdir('evaluation/Set5/lr'):
@@ -50,6 +50,7 @@ if __name__ == '__main__':
         #img.show(title="Input")
         target.show(title="Target")
     avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
-    print('Average psnr score is: %f' % avg_psnr)
+    print('Average psnr score is: %f' % avg_psnr)"""
+
 
 

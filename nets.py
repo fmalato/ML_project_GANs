@@ -1,5 +1,8 @@
+import torchvision.transforms as transforms
+
 from torch import nn
 from collections import OrderedDict
+from PIL import Image
 
 
 class ResidualBlock(nn.Module):
@@ -23,10 +26,13 @@ class ResidualBlock(nn.Module):
 
 class FCNN(nn.Module):
 
-    def __init__(self, input_channels=3):
+    def __init__(self, input_channels=3, scale_factor=4):
         super().__init__()
         self.input_channels = input_channels
         self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bicubic')
+        self.tens = transforms.ToTensor()
+        self.pilimg = transforms.ToPILImage()
+        self.scale_factor = scale_factor
 
         self.conv1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3), padding=(1, 1))),
@@ -69,4 +75,9 @@ class FCNN(nn.Module):
         y = self.upsamp2(y)
         y = self.conv2(y)
         y = self.conv3(y)
-        return y + self.bicubic_upsample(x)
+        x = x.view((3, 32, 32))
+        residual = self.pilimg(x)
+        residual = residual.resize((residual.size[0] * self.scale_factor, residual.size[1] * self.scale_factor),
+                                   Image.BICUBIC)
+        residual = self.tens(residual)
+        return y + residual

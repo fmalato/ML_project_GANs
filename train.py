@@ -69,7 +69,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     #resume_training('state_10e.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=10, starting_epoch=10, batch_size=64)
-    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=64)
+    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=1)
 
 
 
