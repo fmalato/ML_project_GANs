@@ -32,7 +32,7 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
 
     print('Saving checkpoint.')
-    torch.save(net.state_dict(), 'state_{d}e_bilinear.pth'.format(d=e+1))
+    torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e+1))
 
 def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, starting_epoch, batch_size=16):
     net.train()
