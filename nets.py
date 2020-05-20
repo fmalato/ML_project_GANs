@@ -69,13 +69,15 @@ class FCNN(nn.Module):
         ]))
 
     def forward(self, x):
+        w = x.shape[2]
+        h = x.shape[3]
         y = self.conv1(x)
         y = self.residual(y)
         y = self.upsamp1(y)
         y = self.upsamp2(y)
         y = self.conv2(y)
         y = self.conv3(y)
-        x = x.view((3, 32, 32))
+        x = x.view((3, w, h))
         residual = self.pilimg(x.cpu())
         residual = residual.resize((residual.size[0] * self.scale_factor, residual.size[1] * self.scale_factor),
                                    Image.BICUBIC)
