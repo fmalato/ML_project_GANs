@@ -76,8 +76,8 @@ class FCNN(nn.Module):
         y = self.conv2(y)
         y = self.conv3(y)
         x = x.view((3, 32, 32))
-        residual = self.pilimg(x)
+        residual = self.pilimg(x.cpu())
         residual = residual.resize((residual.size[0] * self.scale_factor, residual.size[1] * self.scale_factor),
                                    Image.BICUBIC)
         residual = self.tens(residual)
-        return y + residual
+        return y + residual.cuda()
