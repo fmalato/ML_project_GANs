@@ -31,7 +31,8 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             optimizer.step()
 
             if i % 100 == 0:
-                print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
+                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e, i, sum(losses) / 100))
+                losses = []
 
     print('Saving checkpoint.')
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e+1))
@@ -59,8 +60,8 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
             optimizer.step()
 
             if i % 100 == 0:
-                print('Epoch %d - Step: %d    Loss: %f' % (e + starting_epoch, i, loss))
-
+                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e + starting_epoch, i, sum(losses) / 100))
+                losses = []
 
     print('Saving checkpoint.')
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
