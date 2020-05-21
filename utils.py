@@ -2,6 +2,7 @@ import random
 import os, re
 import torch
 
+import torch.nn as nn
 import torchvision.transforms as transforms
 import numpy as np
 
@@ -94,3 +95,9 @@ def square_patch(img_path, size=32):
         for j in range(scale):
             patches.append(img.crop((i * size, j * size, (i + 1) * size, (j + 1) * size)))
     return patches
+
+
+def init_weights(model):
+    if type(model) == nn.Conv2d:
+        torch.nn.init.xavier_normal_(model.weight)
+

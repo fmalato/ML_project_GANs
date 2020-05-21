@@ -3,10 +3,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from nets import FCNN
 from torch.utils.data import DataLoader
 
+from nets import FCNN
 from dataset import COCO
+from utils import init_weights
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
@@ -29,7 +30,8 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             loss.backward()
             optimizer.step()
 
-            print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
+            if i % 100 == 0:
+                print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
 
     print('Saving checkpoint.')
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e+1))
@@ -56,15 +58,17 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
             loss.backward()
             optimizer.step()
 
-            print('Epoch %d - Step: %d    Loss: %f' % (e, i, loss))
+            if i % 100 == 0:
+                print('Epoch %d - Step: %d    Loss: %f' % (e + starting_epoch, i, loss))
 
-        if (e+1) % 5 == 0:
-            print('Saving checkpoint.')
-            torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
+
+    print('Saving checkpoint.')
+    torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
 
 if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.cuda()
+    net.apply(init_weights)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
