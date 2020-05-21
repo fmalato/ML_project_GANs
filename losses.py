@@ -5,11 +5,10 @@ from torchvision.models import vgg19
 def LossE(image, target):
     criterion = nn.MSELoss()
 
-    return criterion(image, target)
+    return criterion(image, target).cuda()
 
-def LossP(image, target):
+def LossP(vgg, image, target):
     criterion = nn.MSELoss()
-    net = vgg19(pretrained=True, progress=False)
 
-    return criterion(net(image), net(target))
+    return criterion(vgg(image), vgg(target)).cuda()
 

@@ -4,18 +4,22 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.data import DataLoader
+from torchvision.models import vgg19
 
 from nets import FCNN
 from dataset import COCO
 from utils import init_weights
+from losses import LossE, LossP
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
+    # TODO: fix the criterion parameter
     net.train()
 
     losses = []
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
+    vgg = vgg19(pretrained=True, progress=False)
     for e in range(epochs):
         print('Epoch %d.' % e)
 
@@ -23,7 +27,7 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = criterion(output, targets.to(device)).cuda()
+            loss = LossP(vgg, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
@@ -45,6 +49,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     print('Resuming training from epoch %d.' % starting_epoch)
+    vgg = vgg19(pretrained=True, progress=False)
     for e in range(epochs):
         print('Epoch %d' % (e + starting_epoch))
 
@@ -52,7 +57,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = criterion(output, targets.to(device)).cuda()
+            loss = LossP(vgg, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
