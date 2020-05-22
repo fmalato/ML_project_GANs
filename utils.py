@@ -28,16 +28,20 @@ def random_crop(image, target, image_max_range=32, target_scale=4):
 
 def generate_dataset(src, dst, scale=4):
     imgs = os.listdir(src)
-    os.mkdir(dst + '/lr/')
-    os.mkdir(dst + '/hr/')
+    if not os.path.exists(dst + '/lr/'):
+        os.mkdir(dst + '/lr/')
+    if not os.path.exists(dst + '/hr/'):
+        os.mkdir(dst + '/hr/')
 
     for i in range(len(imgs)):
         orig = Image.open(src + '/{x}'.format(x=imgs[i]))
         img = crop_central_square(orig)
         i_hr = img.resize((256, 256), Image.ANTIALIAS)
         i_lr = img.resize((int(256 / scale), int(256 / scale)))
-        i_hr.save(dst + '/hr/{x}'.format(x=imgs[i]), 'PNG')
-        i_lr.save(dst + '/lr/{x}'.format(x=imgs[i]), 'PNG')
+        i_hr.save(dst + '/target/{x}'.format(x=imgs[i]), 'PNG')
+        i_lr.save(dst + '/train/{x}'.format(x=imgs[i]), 'PNG')
+
+    print('Done.')
 
 def short_side(img):
     w, h = img.size
