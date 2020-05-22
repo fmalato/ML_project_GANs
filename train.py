@@ -21,6 +21,8 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     if criterion == LossP:
         vgg = vgg19(pretrained=True, progress=False)
+        vgg.cuda()
+
     for e in range(epochs):
         print('Epoch %d.' % e)
 
@@ -29,9 +31,9 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
 
             output = net(images.to(device))
             if criterion == LossP:
-                loss = criterion(vgg, output, targets.to(device))
+                loss = criterion(vgg, device, output, targets.to(device))
             else:
-                loss = criterion(output, targets.to(device))
+                loss = criterion(device, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
@@ -55,6 +57,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     print('Resuming training from epoch %d.' % starting_epoch)
     if criterion == LossP:
         vgg = vgg19(pretrained=True, progress=False)
+        vgg.cuda()
 
     for e in range(epochs):
         print('Epoch %d' % (e + starting_epoch))
@@ -64,9 +67,9 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
 
             output = net(images.to(device))
             if criterion == LossP:
-                loss = criterion(vgg, output, targets.to(device))
+                loss = criterion(vgg, device, output, targets.to(device))
             else:
-                loss = criterion(output, targets.to(device))
+                loss = criterion(device, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
@@ -88,7 +91,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    #resume_training('state_10e.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=10, starting_epoch=10, batch_size=64)
+    #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=10, starting_epoch=10, batch_size=64)
     train(net, LossE, optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=batch_size)
 
 
