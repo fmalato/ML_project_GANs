@@ -13,13 +13,14 @@ from losses import LossE, LossP
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
-    # TODO: fix the criterion parameter
+
     net.train()
 
     losses = []
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
-    vgg = vgg19(pretrained=True, progress=False)
+    if criterion == LossP:
+        vgg = vgg19(pretrained=True, progress=False)
     for e in range(epochs):
         print('Epoch %d.' % e)
 
@@ -27,14 +28,17 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = LossP(vgg, output, targets.to(device))
+            if criterion == LossP:
+                loss = criterion(vgg, output, targets.to(device))
+            else:
+                loss = criterion(output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
             loss.backward()
             optimizer.step()
 
-            if i % 100 == 0:
+            if i % 100 == 0 and i is not 0:
                 print('Epoch %d - Step: %d    Avg. Loss: %f' % (e, i, sum(losses) / 100))
                 losses = []
 
@@ -49,7 +53,9 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     print('Resuming training from epoch %d.' % starting_epoch)
-    vgg = vgg19(pretrained=True, progress=False)
+    if criterion == LossP:
+        vgg = vgg19(pretrained=True, progress=False)
+
     for e in range(epochs):
         print('Epoch %d' % (e + starting_epoch))
 
@@ -57,14 +63,17 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
             optimizer.zero_grad()
 
             output = net(images.to(device))
-            loss = LossP(vgg, output, targets.to(device))
+            if criterion == LossP:
+                loss = criterion(vgg, output, targets.to(device))
+            else:
+                loss = criterion(output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
             loss.backward()
             optimizer.step()
 
-            if i % 100 == 0:
+            if i % 100 == 0 and i is not 0:
                 print('Epoch %d - Step: %d    Avg. Loss: %f' % (e + starting_epoch, i, sum(losses) / 100))
                 losses = []
 
@@ -72,14 +81,15 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
 
 if __name__ == '__main__':
-    net = FCNN(input_channels=3)
+    batch_size = 2
+    net = FCNN(input_channels=3, batch_size=batch_size)
     net.cuda()
     net.apply(init_weights)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     #resume_training('state_10e.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=10, starting_epoch=10, batch_size=64)
-    train(net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=1)
+    train(net, LossE, optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=batch_size)
 
 
 
