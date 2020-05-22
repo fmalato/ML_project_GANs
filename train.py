@@ -61,7 +61,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     print('Resuming training from epoch %d.' % starting_epoch)
     if criterion == LossP:
-        vgg = vgg19(pretrained=True, progress=False)
+        vgg = vgg19(pretrained=True)
         vgg.cuda()
 
     for e in range(epochs):
