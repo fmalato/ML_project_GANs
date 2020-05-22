@@ -33,7 +33,7 @@ def test_single(net, image_folder, image_name, criterion):
     trans = transforms.ToPILImage(mode='RGB')
     output = output.view((3, 256, 256))
     output = trans(output)
-    output.show(title="Guessing")
+    #output.show(title="Guessing")
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % psnr)
     return psnr
 
@@ -41,7 +41,7 @@ def test_single(net, image_folder, image_name, criterion):
 if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
-    net.load_state_dict(torch.load('state_10e.pth', map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load('state_10e_LossE.pth', map_location=torch.device('cpu')))
     net.eval()
     avg_psnr = 0
     for image_name in os.listdir('evaluation/Set5/lr'):
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
         avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
         #img.show(title="Input")
-        target.show(title="Target")
+        #target.show(title="Target")
     avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
     print('Average psnr score is: %f' % avg_psnr)
 
