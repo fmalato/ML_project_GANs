@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -24,6 +25,7 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
         vgg.cuda()
 
     for e in range(epochs):
+        start = time.perf_counter()
         print('Epoch %d.' % e)
 
         for i, (images, targets) in enumerate(data_loader):
@@ -40,9 +42,12 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             loss.backward()
             optimizer.step()
 
-            if i % 100 == 0 and i is not 0:
-                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e, i, sum(losses) / 100))
+            if i % 10 == 0 and i is not 0:
+                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e, i, sum(losses) / 10))
                 losses = []
+
+        end = time.perf_counter()
+        print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
 
     print('Saving checkpoint.')
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e+1))
@@ -60,6 +65,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
         vgg.cuda()
 
     for e in range(epochs):
+        start = time.perf_counter()
         print('Epoch %d' % (e + starting_epoch))
 
         for i, (images, targets) in enumerate(data_loader):
@@ -76,9 +82,12 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
             loss.backward()
             optimizer.step()
 
-            if i % 100 == 0 and i is not 0:
-                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e + starting_epoch, i, sum(losses) / 100))
+            if i % 10 == 0 and i is not 0:
+                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e + starting_epoch, i, sum(losses) / 10))
                 losses = []
+
+        end = time.perf_counter()
+        print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
 
     print('Saving checkpoint.')
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
