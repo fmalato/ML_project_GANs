@@ -40,6 +40,8 @@ def generate_dataset(src, dst, scale=4):
         i_lr = img.resize((int(256 / scale), int(256 / scale)))
         i_hr.save(dst + '/target/{x}'.format(x=imgs[i]), 'PNG')
         i_lr.save(dst + '/train/{x}'.format(x=imgs[i]), 'PNG')
+        if i % 100 == 0:
+            print('completate: %d / %d' % (i, len(imgs)))
 
     print('Done.')
 
@@ -104,4 +106,12 @@ def square_patch(img_path, size=32):
 def init_weights(model):
     if type(model) == nn.Conv2d:
         torch.nn.init.xavier_normal_(model.weight)
+
+def remove_grayscale():
+    for el in os.listdir('data/train/'):
+        img = Image.open('data/train/{x}'.format(x=el))
+        if len(img.getbands()) != 3:
+            os.remove('data/train/{x}'.format(x=el))
+            os.remove('data/target/{x}'.format(x=el))
+            print('{x} removed.'.format(x=el))
 
