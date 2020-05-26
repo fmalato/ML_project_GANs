@@ -42,8 +42,8 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
             loss.backward()
             optimizer.step()
 
-            if i % 10 == 0 and i is not 0:
-                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e, i, sum(losses) / 10))
+            if i % 100 == 0 and i is not 0:
+                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e, i, sum(losses) / 100))
                 losses = []
 
         end = time.perf_counter()
@@ -82,8 +82,8 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
             loss.backward()
             optimizer.step()
 
-            if i % 10 == 0 and i is not 0:
-                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e + starting_epoch, i, sum(losses) / 10))
+            if i % 100 == 0 and i is not 0:
+                print('Epoch %d - Step: %d    Avg. Loss: %f' % (e + starting_epoch, i, sum(losses) / 100))
                 losses = []
 
         end = time.perf_counter()
@@ -93,15 +93,15 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     torch.save(net.state_dict(), 'state_{d}e.pth'.format(d=e + starting_epoch + 1))
 
 if __name__ == '__main__':
-    batch_size = 2
+    batch_size = 1
     net = FCNN(input_channels=3, batch_size=batch_size)
     net.cuda()
     net.apply(init_weights)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=10, starting_epoch=10, batch_size=64)
-    train(net, LossE, optim.Adam(net.parameters(), lr=1e-4), device, epochs=10, batch_size=batch_size)
+    #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, starting_epoch=10, batch_size=64)
+    train(net, LossE, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 
