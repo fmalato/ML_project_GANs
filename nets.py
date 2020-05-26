@@ -2,10 +2,10 @@ import torchvision.transforms as transforms
 
 from torch import nn
 from collections import OrderedDict
-from PIL import Image
 
 
 class ResidualBlock(nn.Module):
+
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.in_channels, self.out_channels = in_channels, out_channels
@@ -14,7 +14,6 @@ class ResidualBlock(nn.Module):
             ('relu1', nn.ReLU()),
             ]))
         self.block2 = nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))
-
 
     def forward(self, x):
         residual = x
@@ -70,8 +69,6 @@ class FCNN(nn.Module):
         ]))
 
     def forward(self, x):
-        w = x.shape[2]
-        h = x.shape[3]
         y = self.conv1(x)
         y = self.residual(y)
         y = self.upsamp1(y)
@@ -79,4 +76,57 @@ class FCNN(nn.Module):
         y = self.conv2(y)
         y = self.conv3(y)
 
-        return y + self.bicubic_upsample(x)
+        return y + (self.bicubic_upsample(x)).clamp(0, 255)
+
+
+class Discriminator(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+        self.conv = nn.Sequential(OrderedDict([
+            # Block 1
+            ('conv1', nn.Conv2d(3, 32, kernel_size=(3, 3), padding=(1, 1))),
+            ('lReLU1', nn.LeakyReLU()),
+            ('conv1b', nn.Conv2d(32, 32, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
+            ('lReLU1b', nn.LeakyReLU()),
+            # Block 2
+            ('conv2', nn.Conv2d(32, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('lReLU2', nn.LeakyReLU()),
+            ('conv2b', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
+            ('lReLU2b', nn.LeakyReLU()),
+            # Block 3
+            ('conv3', nn.Conv2d(64, 128, kernel_size=(3, 3), padding=(1, 1))),
+            ('lReLU3', nn.LeakyReLU()),
+            ('conv3b', nn.Conv2d(128, 128, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
+            ('lReLU3b', nn.LeakyReLU()),
+            # Block 4
+            ('conv4', nn.Conv2d(128, 256, kernel_size=(3, 3), padding=(1, 1))),
+            ('lReLU4', nn.LeakyReLU()),
+            ('conv4b', nn.Conv2d(256, 256, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
+            ('lReLU4b', nn.LeakyReLU()),
+            # Block 5
+            ('conv5', nn.Conv2d(256, 512, kernel_size=(3, 3), padding=(1, 1))),
+            ('lReLU5', nn.LeakyReLU()),
+            ('conv5b', nn.Conv2d(512, 512, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
+            ('lReLU5b', nn.LeakyReLU())
+            ]))
+
+        self.fc = nn.Sequential(OrderedDict([
+            # FC 1
+            ('fc1', nn.Linear(8192, 1024)),
+            ('lReLUfc1', nn.LeakyReLU()),
+            # FC 2
+            ('fc2', nn.Linear(1024, 1)),
+            ('sigfc2', nn.Sigmoid())
+        ]))
+
+    def forward(self, x):
+        # Convolution
+        x = self.conv(x)
+        # Flattening
+        x = x.view(x.size(0), -1)
+        # FC
+        x = self.fc(x)
+
+        return x
