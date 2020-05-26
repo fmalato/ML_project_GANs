@@ -1,7 +1,11 @@
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 
 from torch import nn
 from collections import OrderedDict
+from PIL import Image
+
+from utils import custom_bicubic
 
 
 class ResidualBlock(nn.Module):
@@ -28,7 +32,7 @@ class FCNN(nn.Module):
     def __init__(self, input_channels=3, batch_size=1, scale_factor=4):
         super().__init__()
         self.input_channels = input_channels
-        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bicubic')
+        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bilinear')
         self.tens = transforms.ToTensor()
         self.pilimg = transforms.ToPILImage()
         self.scale_factor = scale_factor
@@ -73,10 +77,11 @@ class FCNN(nn.Module):
         y = self.residual(y)
         y = self.upsamp1(y)
         y = self.upsamp2(y)
+
         y = self.conv2(y)
         y = self.conv3(y)
 
-        return y + (self.bicubic_upsample(x)).clamp(0, 255)
+        return y + custom_bicubic(x, self.tens, self.pilimg, self.scale_factor)
 
 
 class Discriminator(nn.Module):

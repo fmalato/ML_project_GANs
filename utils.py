@@ -129,5 +129,15 @@ def gram_matrix(input):
     # by dividing by the number of element in each feature maps.
     return G.div(a * b * c * d)
 
+def custom_bicubic(input_tensor, transf_to_tensor, transf_to_img, scale_factor=4):
+
+    batch_size, channels, w, h = input_tensor.shape
+    x = input_tensor.view((channels, w, h))
+    x_img = transf_to_img(x)
+    x_img = x_img.resize((w * scale_factor, h * scale_factor), Image.BICUBIC)
+    x_t = transf_to_tensor(x_img)
+    x_t = x_t.view((batch_size, channels, w * scale_factor, h * scale_factor))
+
+    return x_t
 
 
