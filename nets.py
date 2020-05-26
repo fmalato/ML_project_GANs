@@ -81,7 +81,8 @@ class FCNN(nn.Module):
         y = self.conv2(y)
         y = self.conv3(y)
 
-        return y + custom_bicubic(x.cpu(), self.tens, self.pilimg, self.scale_factor)
+        return y + custom_bicubic(x.cpu(), self.tens, self.pilimg, self.scale_factor).cuda()
+
 
 
 class Discriminator(nn.Module):
