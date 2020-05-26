@@ -41,17 +41,25 @@ def test_single(net, image_folder, image_name, criterion):
 if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
-    net.load_state_dict(torch.load('state_10e_LossP.pth', map_location=torch.device('cpu')))
+    print('Test 10 epochs')
+    net.load_state_dict(torch.load('state_10e_LossE.pth', map_location=torch.device('cpu')))
     net.eval()
     avg_psnr = 0
     for image_name in os.listdir('evaluation/Set5/lr'):
         img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
         target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
         avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
-        img.show(title="Input")
+        #img.show(title="Input")
         #target.show(title="Target")
     avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
     print('Average psnr score is: %f' % avg_psnr)
+    print('Test 15 epochs')
+    net.load_state_dict(torch.load('state_15e_LossE.pth', map_location=torch.device('cpu')))
+    avg_psnr = 0
+    for image_name in os.listdir('evaluation/Set5/lr'):
+        img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
+        target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
+        avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
 
 
 
