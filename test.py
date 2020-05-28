@@ -42,48 +42,17 @@ def test_single(net, image_folder, image_name, criterion):
 
 if __name__ == '__main__':
 
-    """net = FCNN(input_channels=3)
-    print('Test 10 epochs')
-    net.load_state_dict(torch.load('state_10e_LossE.pth', map_location=torch.device('cpu')))
+    net = FCNN(input_channels=3)
     net.eval()
+    print('Test 1 epoch clamp')
+    net.load_state_dict(torch.load('state_2e_norand.pth', map_location=torch.device('cpu')))
     avg_psnr = 0
     for image_name in os.listdir('evaluation/Set5/lr'):
         img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
         target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
         avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
-        #img.show(title="Input")
-        #target.show(title="Target")
+        img.show()
     avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
     print('Average psnr score is: %f' % avg_psnr)
-    print('Test 1 epoch clamp')
-    net.load_state_dict(torch.load('state_1e.pth', map_location=torch.device('cpu')))
-    avg_psnr = 0
-    for image_name in os.listdir('evaluation/Set5/lr'):
-        img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
-        target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
-        avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
-    avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
-    print('Average psnr score is: %f' % avg_psnr)"""
-    input = Image.open('evaluation/Set5/lr/butterfly.png')
-    print(input.size)
-    tens = transforms.ToTensor()
-    img = transforms.ToPILImage()
-    """bicub = nn.Upsample(scale_factor=4, mode='bicubic')
-    input_up = input
-    input_up = input_up.resize((256, 256), Image.BICUBIC)
-    input_up.show()
-
-    input_t = tens(input_up)
-    input_t = input_t.view((1, 3, 256, 256))
-    output_t = input_t
-    output_t = output_t.view((3, 256, 256))
-    output = img(output_t)
-    output.show()"""
-    input_t = tens(input)
-    input_t = input_t.view((1, 3, 64, 64))
-    t = custom_bicubic(input_t, tens, img, 4)
-    t = t.view((3, 256, 256))
-    t_i = img(t)
-    t_i.show()
 
 

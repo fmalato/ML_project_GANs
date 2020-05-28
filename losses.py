@@ -15,8 +15,20 @@ def LossE(device, image, target):
 """ Perceptual Loss """
 def LossP(vgg, device, image, target):
     criterion = nn.MSELoss()
+    #criterion.cuda()
+    vgg_2 = vgg[0]
+    vgg_5 = vgg[1]
+    #vgg_2.cuda()
+    #vgg_5.cuda()
 
-    return criterion(vgg(image), vgg(target.to(device))).cuda()
+    extr_feat = vgg_2(image)
+    real_feat = vgg_2(target)
+    loss_2 = criterion(extr_feat, real_feat.detach())
+    extr_feat = vgg_5(image)
+    real_feat = vgg_5(target)
+    loss_5 = criterion(extr_feat, real_feat.detach())
+
+    return 0.2*loss_2 + loss_5
 
 
 """ GAN generator and discriminator Losses """

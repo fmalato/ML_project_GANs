@@ -5,12 +5,11 @@ import torch.nn as nn
 import torch.optim as optim
 
 from torch.utils.data import DataLoader
-from torchvision.models import vgg19
 
-from nets import FCNN
+from nets import FCNN, VGGFeatureExtractor
 from dataset import COCO
 from utils import init_weights
-from losses import LossE, LossP
+from losses import LossE, LossP, LossA, LossT
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
@@ -21,8 +20,11 @@ def train(net, criterion, optimizer, device, epochs, batch_size=16):
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     if criterion == LossP:
-        vgg = vgg19(pretrained=True, progress=False)
-        vgg.cuda()
+        vgg = []
+        vgg_2 = VGGFeatureExtractor()
+        vgg_5 = VGGFeatureExtractor(pool_layer_num=36)
+        vgg.append(vgg_2)
+        vgg.append(vgg_5)
 
     for e in range(epochs):
         start = time.perf_counter()
@@ -61,7 +63,7 @@ def resume_training(state_dict_path, net, criterion, optimizer, device, epochs, 
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     print('Resuming training from epoch %d.' % starting_epoch)
     if criterion == LossP:
-        vgg = vgg19(pretrained=True)
+        vgg = VGGFeatureExtractor()
         vgg.cuda()
 
     for e in range(epochs):
@@ -101,7 +103,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=1, starting_epoch=10, batch_size=64)
-    train(net, LossE, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 

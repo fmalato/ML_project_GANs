@@ -1,9 +1,9 @@
+import torch
 import torchvision.transforms as transforms
-import torch.nn.functional as F
 
 from torch import nn
 from collections import OrderedDict
-from PIL import Image
+from torchvision.models import vgg19
 
 from utils import custom_bicubic
 
@@ -23,8 +23,8 @@ class ResidualBlock(nn.Module):
         residual = x
         x = self.block1(x)
         x = self.block2(x)
-        x += residual
-        return x
+        x = torch.add(x, residual)
+        return x.clamp(0, 255)
 
 
 class FCNN(nn.Module):
@@ -81,8 +81,7 @@ class FCNN(nn.Module):
         y = self.conv2(y)
         y = self.conv3(y)
 
-        return y + custom_bicubic(x.cpu(), self.tens, self.pilimg, self.scale_factor).cuda()
-
+        return (torch.add(y, custom_bicubic(x.cpu(), self.tens, self.pilimg, self.scale_factor))).clamp(0, 255)
 
 
 class Discriminator(nn.Module):
@@ -136,3 +135,16 @@ class Discriminator(nn.Module):
         x = self.fc(x)
 
         return x
+
+
+class VGGFeatureExtractor(nn.Module):
+
+    def __init__(self, pool_layer_num=9):
+        super().__init__()
+        vgg = vgg19(pretrained=True)
+        self.features = nn.Sequential(*list(vgg.features.children())[:pool_layer_num])
+
+    def forward(self, x):
+        return self.features(x)
+
+
