@@ -6,10 +6,74 @@ import torch.optim as optim
 
 from torch.utils.data import DataLoader
 
-from nets import FCNN, VGGFeatureExtractor
+from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
 from utils import init_weights
 from losses import LossE, LossP, LossA, LossT
+
+
+def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
+    net.train()
+    data = COCO('data/train/', 'data/target/')
+    data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
+    lossA = False
+    losses = []
+    losses_d = []
+    if LossP in criterions:
+        vgg = []
+        vgg_2 = VGGFeatureExtractor()
+        vgg_5 = VGGFeatureExtractor(pool_layer_num=36)
+        vgg.append(vgg_2)
+        vgg.append(vgg_5)
+    if LossA in criterions:
+        disc = Discriminator()
+        optim_d = optim.Adam(disc.parameters(), lr=1e-4)
+        lossA = True
+
+    for e in range(epochs):
+        start = time.perf_counter()
+        print('Epoch %d.' % e)
+
+        for i, (images, targets) in enumerate(data_loader):
+            optimizer.zero_grad()
+
+            loss = nn.MSELoss()
+            output = net(images.to(device))
+
+            for criterion in criterions:
+                if criterion == LossP:
+                    loss += criterion(vgg, device, output, targets.to(device))
+
+                elif criterion == LossA:
+                    loss_d, loss_g = criterion(disc, device, output, targets.to(device))
+                    loss += loss_g
+                else:
+                    loss += criterion(device, output, targets.to(device))
+
+            losses.append(loss.detach().cuda().item())
+
+            loss.backward(retain_graph=True)
+            optimizer.step()
+
+            if lossA:
+                losses_d.append(loss_d.detach().item())
+                optim_d.zero_grad()
+                loss_d.backward()
+                optim_d.step()
+
+            if i % 100 == 0 and i is not 0:
+                print('Epoch %d - Step: %d    Avg. Loss G: %f    Avg. Loss D: %f' % (e,
+                                                                                     i,
+                                                                                     sum(losses) / 100,
+                                                                                     sum(losses_d) / 100 if lossA else 0.0))
+                losses = []
+                losses_d = []
+
+        end = time.perf_counter()
+        print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
+
+    print('Saving checkpoint.')
+    torch.save(net.state_dict(), 'state_{d}e_PA.pth'.format(d=e + 1))
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
@@ -102,8 +166,9 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-5), device, epochs=1, starting_epoch=10, batch_size=64)
-    train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, starting_epoch=10, batch_size=64)
+    #train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    multiple_train(net, [LossP, LossA], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 

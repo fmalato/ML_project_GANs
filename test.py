@@ -11,6 +11,7 @@ from PIL import Image
 
 from nets import FCNN
 from utils import crop_central_square, custom_bicubic
+from losses import LossE, LossP, LossA, LossT
 
 def test_single(net, image_folder, image_name, criterion):
     net.eval()
@@ -24,7 +25,6 @@ def test_single(net, image_folder, image_name, criterion):
 
     input = input.view((1, 3, 64, 64))
     output = net(input)
-    output = output.view((3, 256, 256))
 
     loss = criterion(target, output)
     # PSNR from review
@@ -34,6 +34,7 @@ def test_single(net, image_folder, image_name, criterion):
     #psnr = 20 * math.log(255) / math.log(10.0) - np.float32(10 / np.log(10)) * math.log(loss)
 
     trans = transforms.ToPILImage(mode='RGB')
+    output = output.view((3, 256, 256))
     output = trans(output)
     output.show(title="Guessing")
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % psnr)
@@ -44,15 +45,14 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    print('Test 1 epoch clamp')
-    net.load_state_dict(torch.load('state_2e_norand.pth', map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load('trained_models/state_2e_LossE.pth', map_location=torch.device('cpu')))
     avg_psnr = 0
-    for image_name in os.listdir('evaluation/Set5/lr'):
-        img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
-        target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
-        avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss(reduction='mean'))
-        img.show()
-    avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
+    for image_name in os.listdir('evaluation/Set14/lr'):
+        img = Image.open('evaluation/Set14/lr/{x}'.format(x=image_name))
+        target = Image.open('evaluation/Set14/hr/{x}'.format(x=image_name))
+        avg_psnr += test_single(net, 'evaluation/Set14/', image_name, criterion=nn.MSELoss())
+        #img.show()
+    avg_psnr = avg_psnr / len(os.listdir('evaluation/Set14/lr'))
     print('Average psnr score is: %f' % avg_psnr)
 
 

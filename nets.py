@@ -88,6 +88,7 @@ class Discriminator(nn.Module):
 
     def __init__(self):
         super().__init__()
+        self.output_shape = (1, 1, 1)
 
         self.conv = nn.Sequential(OrderedDict([
             # Block 1
@@ -122,7 +123,7 @@ class Discriminator(nn.Module):
             ('fc1', nn.Linear(8192, 1024)),
             ('lReLUfc1', nn.LeakyReLU()),
             # FC 2
-            ('fc2', nn.Linear(1024, 1)),
+            ('fc2', nn.Linear(1024, 2)),
             ('sigfc2', nn.Sigmoid())
         ]))
 
