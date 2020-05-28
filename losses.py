@@ -34,26 +34,18 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(discriminator, image, target):
-    def LossA(discriminator, device, image, target):
-        valid = Variable(Tensor(np.ones(1)).long(), requires_grad=False)
-        fake = Variable(Tensor(np.zeros(1)).long(), requires_grad=False)
-        criterion = nn.CrossEntropyLoss().cuda()
-        # Generator
-        img = discriminator(image)
-        loss_g = criterion(img, valid.to(device))
-        # Discriminator
-        hr_imgs = torch.cat([discriminator(target), discriminator(image.detach())], dim=0)
-        hr_labels = torch.cat([valid, fake], dim=0)
+def LossA(discriminator, device, image, target):
+    valid = Variable(Tensor(np.ones(1)).long(), requires_grad=False)
+    fake = Variable(Tensor(np.zeros(1)).long(), requires_grad=False)
+    criterion = nn.CrossEntropyLoss().cuda()
+    discriminator.cuda()
+    # Generator
+    img = discriminator(image.to(device))
+    loss_g = criterion(img.to(device), valid.to(device))
+    # Discriminator
+    loss_d = criterion(discriminator(target), valid) + criterion(Tensor(np.ones(1)).long() - img, fake)
 
-        idxs = list(range(len(hr_labels)))
-        idxs = np.random.shuffle(idxs)
-        hr_imgs = hr_imgs[idxs]
-        hr_labels = hr_labels[idxs]
-
-        loss_d = criterion(hr_imgs.to(device), hr_labels.to(device))
-
-        return loss_g, loss_d
+    return loss_g, loss_d
 
 
 """ Texture Loss """

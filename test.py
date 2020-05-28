@@ -45,14 +45,14 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    net.load_state_dict(torch.load('trained_models/state_2e_LossE.pth', map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load('trained_models/state_1e_LossP.pth', map_location=torch.device('cpu')))
     avg_psnr = 0
-    for image_name in os.listdir('evaluation/Set14/lr'):
-        img = Image.open('evaluation/Set14/lr/{x}'.format(x=image_name))
-        target = Image.open('evaluation/Set14/hr/{x}'.format(x=image_name))
-        avg_psnr += test_single(net, 'evaluation/Set14/', image_name, criterion=nn.MSELoss())
-        #img.show()
-    avg_psnr = avg_psnr / len(os.listdir('evaluation/Set14/lr'))
+    for image_name in os.listdir('evaluation/Set5/lr'):
+        img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
+        target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
+        avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss())
+        img.show()
+    avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
     print('Average psnr score is: %f' % avg_psnr)
 
 

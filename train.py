@@ -27,6 +27,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         vgg.append(vgg_5)
     if LossA in criterions:
         disc = Discriminator()
+        disc.cuda()
         optim_d = optim.Adam(disc.parameters(), lr=1e-4)
         lossA = True
 
@@ -45,7 +46,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                     loss += criterion(vgg, device, output, targets.to(device))
 
                 elif criterion == LossA:
-                    loss_d, loss_g = criterion(disc, device, output, targets.to(device))
+                    loss_g, loss_d = criterion(disc, device, output, targets.to(device))
                     loss += loss_g
                 else:
                     loss += criterion(device, output, targets.to(device))
