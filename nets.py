@@ -98,21 +98,25 @@ class Discriminator(nn.Module):
             ('lReLU1b', nn.LeakyReLU()),
             # Block 2
             ('conv2', nn.Conv2d(32, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('batchNorm2', nn.BatchNorm2d(64)),
             ('lReLU2', nn.LeakyReLU()),
             ('conv2b', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
             ('lReLU2b', nn.LeakyReLU()),
             # Block 3
             ('conv3', nn.Conv2d(64, 128, kernel_size=(3, 3), padding=(1, 1))),
+            ('batchNorm3', nn.BatchNorm2d(128)),
             ('lReLU3', nn.LeakyReLU()),
             ('conv3b', nn.Conv2d(128, 128, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
             ('lReLU3b', nn.LeakyReLU()),
             # Block 4
             ('conv4', nn.Conv2d(128, 256, kernel_size=(3, 3), padding=(1, 1))),
+            ('batchNorm4', nn.BatchNorm2d(256)),
             ('lReLU4', nn.LeakyReLU()),
             ('conv4b', nn.Conv2d(256, 256, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
             ('lReLU4b', nn.LeakyReLU()),
             # Block 5
             ('conv5', nn.Conv2d(256, 512, kernel_size=(3, 3), padding=(1, 1))),
+            ('batchNorm5', nn.BatchNorm2d(512)),
             ('lReLU5', nn.LeakyReLU()),
             ('conv5b', nn.Conv2d(512, 512, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
             ('lReLU5b', nn.LeakyReLU())
@@ -123,7 +127,7 @@ class Discriminator(nn.Module):
             ('fc1', nn.Linear(8192, 1024)),
             ('lReLUfc1', nn.LeakyReLU()),
             # FC 2
-            ('fc2', nn.Linear(1024, 2)),
+            ('fc2', nn.Linear(1024, 1)),
             ('sigfc2', nn.Sigmoid())
         ]))
 

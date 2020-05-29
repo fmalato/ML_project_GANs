@@ -19,17 +19,21 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
     lossA = False
     losses = []
     losses_d = []
+    train_d = True
     if LossP in criterions:
         vgg = []
-        vgg_2 = VGGFeatureExtractor()
-        vgg_5 = VGGFeatureExtractor(pool_layer_num=36)
-        vgg.append(vgg_2)
-        vgg.append(vgg_5)
+        vgg.append(VGGFeatureExtractor())
+        vgg.append(VGGFeatureExtractor(pool_layer_num=36))
     if LossA in criterions:
         disc = Discriminator()
         disc.cuda()
         optim_d = optim.Adam(disc.parameters(), lr=1e-4)
         lossA = True
+    if LossT in criterions:
+        vgg_T = []
+        vgg_T.append(VGGFeatureExtractor(pool_layer_num=4))
+        vgg_T.append(VGGFeatureExtractor(pool_layer_num=9))
+        vgg_T.append(VGGFeatureExtractor(pool_layer_num=18))
 
     for e in range(epochs):
         start = time.perf_counter()
@@ -48,8 +52,10 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                     loss += criterion(vgg, device, output, targets.to(device))
 
                 elif criterion == LossA:
-                    loss_g, loss_d = criterion(disc, device, output, targets.to(device))
+                    loss_g, loss_d, train_d = criterion(disc, device, output, targets.to(device))
                     loss += loss_g
+                elif criterion == LossT:
+                    loss += criterion(vgg_T, device, output, targets.to(device))
                 else:
                     loss += criterion(vgg, device, output, targets.to(device))
 
@@ -58,7 +64,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
             loss.backward(retain_graph=True)
             optimizer.step()
 
-            if lossA:
+            if lossA and train_d:
                 losses_d.append(loss_d.detach().item())
                 optim_d.zero_grad()
                 loss_d.backward()
@@ -68,9 +74,9 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                 end_step = time.perf_counter()
                 print('Epoch %d - Step: %d    Avg. Loss G: %f    Avg. Loss D: %f' % (e,
                                                                                      i,
-                                                                                     sum(losses) / 1,
+                                                                                     sum(losses) / 100,
                                                                                      sum(
-                                                                                         losses_d) / 1 if lossA else 0.0))
+                                                                                         losses_d) / 100 if lossA else 0.0))
                 epoch_times.append(end_step - start_step)
                 hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (150000 - i), 3600)
                 minutes, seconds = divmod(rem, 60)
@@ -182,7 +188,7 @@ if __name__ == '__main__':
 
     #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, starting_epoch=10, batch_size=64)
     #train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
-    multiple_train(net, [LossE, LossA, LossT], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    multiple_train(net, [LossP, LossA], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 
