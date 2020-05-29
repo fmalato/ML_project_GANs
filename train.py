@@ -38,7 +38,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         for i, (images, targets) in enumerate(data_loader):
             optimizer.zero_grad()
 
-            loss = nn.MSELoss()
+            loss = 0.0
             output = net(images.to(device))
 
             for criterion in criterions:
@@ -49,7 +49,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                     loss_g, loss_d = criterion(disc, device, output, targets.to(device))
                     loss += loss_g
                 else:
-                    loss += criterion(device, output, targets.to(device))
+                    loss += criterion(vgg, device, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
@@ -74,7 +74,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
 
     print('Saving checkpoint.')
-    torch.save(net.state_dict(), 'state_{d}e_PA.pth'.format(d=e + 1))
+    torch.save(net.state_dict(), 'state_{d}e_PAT.pth'.format(d=e + 1))
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
@@ -169,7 +169,7 @@ if __name__ == '__main__':
 
     #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, starting_epoch=10, batch_size=64)
     #train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
-    multiple_train(net, [LossP, LossA], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    multiple_train(net, [LossP, LossA, LossT], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 

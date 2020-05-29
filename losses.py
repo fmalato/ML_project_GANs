@@ -35,15 +35,15 @@ def LossP(vgg, device, image, target):
 
 """ GAN generator and discriminator Losses """
 def LossA(discriminator, device, image, target):
-    valid = Variable(Tensor(np.ones(1)).long(), requires_grad=False)
-    fake = Variable(Tensor(np.zeros(1)).long(), requires_grad=False)
+    valid = Variable(Tensor(np.ones(1)).long(), requires_grad=False).cuda()
+    fake = Variable(Tensor(np.zeros(1)).long(), requires_grad=False).cuda()
     criterion = nn.CrossEntropyLoss().cuda()
     discriminator.cuda()
     # Generator
     img = discriminator(image.to(device))
     loss_g = criterion(img.to(device), valid.to(device))
     # Discriminator
-    loss_d = criterion(discriminator(target), valid) + criterion(Tensor(np.ones(1)).long() - img, fake)
+    loss_d = criterion(discriminator(target), valid) + criterion(Tensor(np.ones(1)).long().cuda() - img, fake)
 
     return loss_g, loss_d
 
