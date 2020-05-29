@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    net.load_state_dict(torch.load('trained_models/state_1e_LossP.pth', map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load('state_1e_PA.pth', map_location=torch.device('cpu')))
     avg_psnr = 0
     for image_name in os.listdir('evaluation/Set5/lr'):
         img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))

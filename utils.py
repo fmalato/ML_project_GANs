@@ -140,4 +140,3 @@ def custom_bicubic(input_tensor, transf_to_tensor, transf_to_img, scale_factor=4
 
     return x_t
 
-
