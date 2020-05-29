@@ -67,10 +67,10 @@ def LossT(vgg, device, image, target):
     pat_list = pat_list[0]
     pat_tar_list = torch.split(patches_target, batch_size)
     pat_tar_list = pat_tar_list[0]
-    for i in range(batch_size):
+    for i in range(int(batch_size / 16)):
         loss += criterion(gram_matrix(vgg_5(pat_list[i].view((1, 3, 16, 16)))).to(device),
                           gram_matrix(vgg_5(pat_tar_list[i].view((1, 3, 16, 16)))).to(device))
-    loss = torch.div(loss, batch_size)
+    loss = torch.div(loss, batch_size / 16)
 
     return loss
 

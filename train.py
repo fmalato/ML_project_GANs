@@ -19,7 +19,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
     lossA = False
     losses = []
     losses_d = []
-    if LossP in criterions:
+    if LossP in criterions or LossT in criterions:
         vgg = []
         vgg_2 = VGGFeatureExtractor()
         vgg_5 = VGGFeatureExtractor(pool_layer_num=36)
@@ -44,14 +44,14 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
             output = net(images.to(device))
 
             for criterion in criterions:
-                if criterion == LossP:
+                if criterion == LossP or criterion == LossT:
                     loss += criterion(vgg, device, output, targets.to(device))
 
                 elif criterion == LossA:
                     loss_g, loss_d = criterion(disc, device, output, targets.to(device))
                     loss += loss_g
                 else:
-                    loss += criterion(vgg, device, output, targets.to(device))
+                    loss += criterion(device, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
