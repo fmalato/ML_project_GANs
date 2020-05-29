@@ -9,7 +9,7 @@ import math
 from torch import FloatTensor
 from PIL import Image
 
-from nets import FCNN
+from FCNN_CPU import FCNN
 from utils import crop_central_square, custom_bicubic
 from losses import LossE, LossP, LossA, LossT
 
@@ -34,9 +34,10 @@ def test_single(net, image_folder, image_name, criterion):
     #psnr = 20 * math.log(255) / math.log(10.0) - np.float32(10 / np.log(10)) * math.log(loss)
 
     trans = transforms.ToPILImage(mode='RGB')
-    output = output.view((3, 256, 256))
-    output = trans(output)
-    output.show(title="Guessing")
+    if image_name == 'baby.png':
+        output = output.view((3, 256, 256))
+        output = trans(output)
+        output.show(title="Guessing")
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % psnr)
     return psnr
 
@@ -45,14 +46,23 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    net.load_state_dict(torch.load('state_1e_PA.pth', map_location=torch.device('cpu')))
-    avg_psnr = 0
-    for image_name in os.listdir('evaluation/Set5/lr'):
-        img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
-        target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
-        avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss())
-        img.show()
-    avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
-    print('Average psnr score is: %f' % avg_psnr)
+    tests = ['state_2e_LossE', 'state_1e_LossP', 'state_1e_EA', 'state_1e_PA', 'state_1e_PAT']
+    for el in tests:
+        print('Testing {x}'.format(x=el))
+        net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
+        avg_psnr = 0
+        for image_name in os.listdir('evaluation/Set5/lr'):
+            img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
+            target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
+            avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss())
+        avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
+        print('Average psnr score is: %f' % avg_psnr)
+    img = Image.open('evaluation/Set5/lr/baby.png')
+    tens = transforms.ToTensor()
+    pilimg = transforms.ToPILImage()
+    img = custom_bicubic(tens(img).view((1, 3, img.size[0], img.size[1])), tens, pilimg, 4)
+    img = img.view((3, 256, 256))
+    img = pilimg(img)
+    img.show()
 
 

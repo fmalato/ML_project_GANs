@@ -33,7 +33,9 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
 
     for e in range(epochs):
         start = time.perf_counter()
+        start_step = start
         print('Epoch %d.' % e)
+        epoch_times = []
 
         for i, (images, targets) in enumerate(data_loader):
             optimizer.zero_grad()
@@ -63,18 +65,29 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                 optim_d.step()
 
             if i % 100 == 0 and i is not 0:
+                end_step = time.perf_counter()
                 print('Epoch %d - Step: %d    Avg. Loss G: %f    Avg. Loss D: %f' % (e,
                                                                                      i,
-                                                                                     sum(losses) / 100,
-                                                                                     sum(losses_d) / 100 if lossA else 0.0))
+                                                                                     sum(losses) / 1,
+                                                                                     sum(
+                                                                                         losses_d) / 1 if lossA else 0.0))
+                epoch_times.append(end_step - start_step)
+                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (150000 - i), 3600)
+                minutes, seconds = divmod(rem, 60)
+                print('Time for the last step: {:05.2f} s    Epoch ETA: {:0>2}:{:0>2}:{:0>2}'.format(
+                    end_step - start_step,
+                    int(hours),
+                    int(minutes),
+                    int(seconds)))
                 losses = []
                 losses_d = []
+                start_step = time.perf_counter()
 
         end = time.perf_counter()
         print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
 
     print('Saving checkpoint.')
-    torch.save(net.state_dict(), 'state_{d}e_PAT.pth'.format(d=e + 1))
+    torch.save(net.state_dict(), 'state_{d}e_EAT.pth'.format(d=e + 1))
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
@@ -169,7 +182,7 @@ if __name__ == '__main__':
 
     #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, starting_epoch=10, batch_size=64)
     #train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
-    multiple_train(net, [LossP, LossA, LossT], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    multiple_train(net, [LossE, LossA, LossT], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 
