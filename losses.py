@@ -30,7 +30,7 @@ def LossP(vgg, device, image, target):
     real_feat = vgg_5(target)
     loss_5 = criterion(extr_feat, real_feat.detach())
 
-    return 0.2*loss_2 + loss_5
+    return (2e-1)*loss_2 + (2e-2)*loss_5
 
 
 """ GAN generator and discriminator Losses """
@@ -47,7 +47,8 @@ def LossA(discriminator, device, image, target):
         train_d = True
     else:
         train_d = False
-    return loss_g.reshape(1), loss_d.reshape(1), train_d
+    # 2 if training PAT, 1 if training PA
+    return 2 * loss_g.reshape(1), 2 * loss_d.reshape(1), train_d
 
 
 """ Texture Loss """
@@ -72,16 +73,16 @@ def LossT(vgg, device, image, target):
     pat_list = pat_list[0]
     pat_tar_list = torch.split(patches_target, batch_size)
     pat_tar_list = pat_tar_list[0]
-    for i in range(int(batch_size / 16)):
-        loss += criterion(gram_matrix(vgg_1(pat_list[i].view((1, 3, 16, 16)))),
-                          gram_matrix(vgg_1(pat_tar_list[i].view((1, 3, 16, 16)))))
-        loss += criterion(gram_matrix(vgg_2(pat_list[i].view((1, 3, 16, 16)))),
-                          gram_matrix(vgg_2(pat_tar_list[i].view((1, 3, 16, 16)))))
-        loss += criterion(gram_matrix(vgg_3(pat_list[i].view((1, 3, 16, 16)))),
-                          gram_matrix(vgg_3(pat_tar_list[i].view((1, 3, 16, 16)))))
-    loss = torch.div(loss, batch_size / 16)
+    loss_1 = loss_2 = loss_3 = 0.0
+    for i in range(batch_size / 16):
+        loss_1 += criterion(gram_matrix(vgg_1(pat_list[i].view((1, 3, 16, 16)))),
+                            gram_matrix(vgg_1(pat_tar_list[i].view((1, 3, 16, 16)))))
+        loss_2 += criterion(gram_matrix(vgg_2(pat_list[i].view((1, 3, 16, 16)))),
+                            gram_matrix(vgg_2(pat_tar_list[i].view((1, 3, 16, 16)))))
+        loss_3 += criterion(gram_matrix(vgg_3(pat_list[i].view((1, 3, 16, 16)))),
+                            gram_matrix(vgg_3(pat_tar_list[i].view((1, 3, 16, 16)))))
 
-    return loss
+    return (3e-7) * torch.div(loss_1, batch_size) + (1e-6) * torch.div(loss_2, batch_size) + (1e-6) * torch.div(loss_3, batch_size)
 
 
 

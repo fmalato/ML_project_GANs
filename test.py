@@ -34,7 +34,7 @@ def test_single(net, image_folder, image_name, criterion):
     #psnr = 20 * math.log(255) / math.log(10.0) - np.float32(10 / np.log(10)) * math.log(loss)
 
     trans = transforms.ToPILImage(mode='RGB')
-    if image_name == 'baby.png':
+    if image_name == 'bird.png':
         output = output.view((3, 256, 256))
         output = trans(output)
         output.show(title="Guessing")
@@ -57,7 +57,7 @@ if __name__ == '__main__':
             avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss())
         avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
         print('Average psnr score is: %f' % avg_psnr)
-    img = Image.open('evaluation/Set5/lr/baby.png')
+    img = Image.open('evaluation/Set5/lr/bird.png')
     tens = transforms.ToTensor()
     pilimg = transforms.ToPILImage()
     img = custom_bicubic(tens(img).view((1, 3, img.size[0], img.size[1])), tens, pilimg, 4)
