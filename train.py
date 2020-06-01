@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import os
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -23,6 +24,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
     losses = []
     losses_d = []
     train_d = True
+    max_idx = len(os.listdir('data/train'))
     if LossP in criterions:
         vgg = []
         vgg.append(VGGFeatureExtractor())
@@ -36,12 +38,6 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         valid_false = []
         tens = transforms.ToTensor()
         bicub = nn.Upsample(scale_factor=4, mode='bicubic', align_corners=False)
-        for el in os.listdir('evaluation/Set5/hr/'):
-            valid_true.append(
-                tens(square_patch('evaluation/Set5/hr/{x}'.format(x=el), size=128)[0]).cuda().view((1, 3, 128, 128)))
-        for el in os.listdir('evaluation/Set5/lr/'):
-            valid_false.append(
-                bicub(tens(square_patch('evaluation/Set5/lr/{x}'.format(x=el))[0]).cuda().view((1, 3, 32, 32))).clamp(0, 255))
     if LossT in criterions:
         vgg_T = []
         vgg_T.append(VGGFeatureExtractor(pool_layer_num=0))
@@ -65,6 +61,15 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                     loss += criterion(vgg, device, output, targets.to(device))
 
                 elif criterion == LossA:
+                    valid = []
+                    while len(valid) < 5:
+                        valid = [random.randint(0, max_idx) for i in range(5)]
+                    for i in range(5):
+                        valid_true.append(tens(square_patch('data/target/{x}'.format(x=os.listdir('data/target/')[i]),
+                                                            size=128)[0]).cuda().view((1, 3, 128, 128)))
+                        valid_false.append(
+                            bicub(tens(square_patch('data/train/{x}'.format(x=os.listdir('data/train/')[i]),
+                                                    size=32)[0]).cuda().view((1, 3, 32, 32))).clamp(0, 255))
                     loss_g, loss_d, train_d = criterion(disc, device, output, targets.to(device), valid_true, valid_false)
                     loss += loss_g
                 elif criterion == LossT:
