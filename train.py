@@ -63,6 +63,8 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
 
                 elif criterion == LossA:
                     valid = []
+                    valid_true = []
+                    valid_false = []
                     while len(valid) < 5:
                         valid = [random.randint(0, max_idx) for j in range(5)]
                     for j in range(5):
