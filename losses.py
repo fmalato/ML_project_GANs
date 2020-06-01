@@ -51,8 +51,10 @@ def LossA(discriminator, device, image, target, valid_true, valid_false):
             pred = torch.round(discriminator(el)).reshape(1)
             if pred.item() == 0.0:
                 right_false += 1
-
-    if right_true < 4 or right_false < 4:
+        right_true = right_true / len(valid_true)
+        right_false = right_false / len(valid_false)
+    # If discriminator gets < 80% accuracy
+    if right_true < 0.8 or right_false < 0.8:
         train_d = True
         log1 = - torch.log(discriminator(target))
         log2 = - torch.log(Tensor(np.ones(1)).cuda() - img)
