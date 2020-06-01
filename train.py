@@ -1,15 +1,17 @@
 import numpy as np
 import time
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchvision.transforms as transforms
 
 from torch import Tensor
 from torch.utils.data import DataLoader
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
-from utils import init_weights
+from utils import init_weights, square_patch
 from losses import LossE, LossP, LossA, LossT
 
 
@@ -30,6 +32,16 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         disc.cuda()
         optim_d = optim.Adam(disc.parameters(), lr=1e-4)
         lossA = True
+        valid_true = []
+        valid_false = []
+        tens = transforms.ToTensor()
+        bicub = nn.Upsample(scale_factor=4, mode='bicubic', align_corners=False)
+        for el in os.listdir('evaluation/Set5/hr/'):
+            valid_true.append(
+                tens(square_patch('evaluation/Set5/hr/{x}'.format(x=el), size=128)[0]).cuda().view((1, 3, 128, 128)))
+        for el in os.listdir('evaluation/Set5/lr/'):
+            valid_false.append(
+                bicub(tens(square_patch('evaluation/Set5/lr/{x}'.format(x=el))[0]).cuda().view((1, 3, 32, 32))).clamp(0, 255))
     if LossT in criterions:
         vgg_T = []
         vgg_T.append(VGGFeatureExtractor(pool_layer_num=0))
@@ -53,7 +65,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                     loss += criterion(vgg, device, output, targets.to(device))
 
                 elif criterion == LossA:
-                    loss_g, loss_d, train_d = criterion(disc, device, output, targets.to(device))
+                    loss_g, loss_d, train_d = criterion(disc, device, output, targets.to(device), valid_true, valid_false)
                     loss += loss_g
                 elif criterion == LossT:
                     loss += criterion(vgg_T, device, output, targets.to(device))
@@ -93,7 +105,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
 
     print('Saving checkpoint.')
-    torch.save(net.state_dict(), 'state_{d}e_P.pth'.format(d=e + 1))
+    torch.save(net.state_dict(), 'state_{d}e_PA.pth'.format(d=e + 1))
 
 
 def train(net, criterion, optimizer, device, epochs, batch_size=16):
@@ -188,7 +200,7 @@ if __name__ == '__main__':
 
     #resume_training('state_10e_LossE.pth', net, nn.MSELoss(), optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, starting_epoch=10, batch_size=64)
     #train(net, LossP, optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
-    multiple_train(net, [LossP], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
+    multiple_train(net, [LossP, LossA], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size)
 
 
 

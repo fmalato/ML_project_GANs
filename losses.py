@@ -34,21 +34,34 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(discriminator, device, image, target):
+def LossA(discriminator, device, image, target, valid_true, valid_false):
 
     # Generator
     img = discriminator(image.to(device))
     loss_g = -torch.log(img).cuda()
     # Discriminator
-    log1 = - torch.log(discriminator(target)).cuda()
-    log2 = - torch.log(Tensor(np.ones(1)) - img).cuda()
-    loss_d = log1 + log2
-    if log1 > 0.25 or log2 > 0.25:
+    with torch.no_grad():
+        right_true = 0
+        right_false = 0
+        for el in valid_true:
+            pred = torch.round(discriminator(el)).reshape(1)
+            if pred.item() == 1.0:
+                right_true += 1
+        for el in valid_false:
+            pred = torch.round(discriminator(el)).reshape(1)
+            if pred.item() == 0.0:
+                right_false += 1
+
+    if right_true < 4 or right_false < 4:
         train_d = True
+        log1 = - torch.log(discriminator(target)).cuda()
+        log2 = - torch.log(Tensor(np.ones(1)) - img).cuda()
+        loss_d = log1 + log2
     else:
         train_d = False
+        loss_d = 0.0
     # 2 if training PAT, 1 if training PA
-    return 2 * loss_g.reshape(1), 2 * loss_d.reshape(1), train_d
+    return 1 * loss_g.reshape(1), 1 * loss_d.reshape(1), train_d
 
 
 """ Texture Loss """
