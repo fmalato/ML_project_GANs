@@ -54,12 +54,12 @@ def LossA(discriminator, device, image, target, valid_true, valid_false):
 
     if right_true < 4 or right_false < 4:
         train_d = True
-        log1 = - torch.log(discriminator(target)).cuda()
-        log2 = - torch.log(Tensor(np.ones(1)) - img).cuda()
+        log1 = - torch.log(discriminator(target))
+        log2 = - torch.log(Tensor(np.ones(1)).cuda() - img)
         loss_d = log1 + log2
     else:
         train_d = False
-        loss_d = 0.0
+        loss_d = Tensor(np.zeros(1)).cuda()
     # 2 if training PAT, 1 if training PA
     return 1 * loss_g.reshape(1), 1 * loss_d.reshape(1), train_d
 

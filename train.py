@@ -57,7 +57,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
         for i, (images, targets) in enumerate(data_loader):
             optimizer.zero_grad()
 
-            loss = Tensor(np.zeros(1))
+            loss = Tensor(np.zeros(1)).cuda()
             output = net(images.to(device))
 
             for criterion in criterions:
