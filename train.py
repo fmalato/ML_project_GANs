@@ -82,7 +82,7 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
 
             losses.append(loss.detach().cuda().item())
 
-            loss.backward(retain_graph=True)
+            loss.backward()
             optimizer.step()
 
             if lossA and train_d:

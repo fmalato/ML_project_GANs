@@ -37,7 +37,7 @@ def LossP(vgg, device, image, target):
 def LossA(discriminator, device, image, target, valid_true, valid_false):
 
     # Generator
-    img = discriminator(image.to(device))
+    img = discriminator(image.to(device).detach())
     loss_g = -torch.log(img).cuda()
     # Discriminator
     with torch.no_grad():
@@ -48,7 +48,7 @@ def LossA(discriminator, device, image, target, valid_true, valid_false):
             if pred.item() == 1.0:
                 right_true += 1
         for el in valid_false:
-            pred = torch.round(discriminator(el)).reshape(1)
+            pred = torch.round(discriminator(el.detach())).reshape(1)
             if pred.item() == 0.0:
                 right_false += 1
         right_true = right_true / len(valid_true)
@@ -57,7 +57,7 @@ def LossA(discriminator, device, image, target, valid_true, valid_false):
     if right_true < 0.8 or right_false < 0.8:
         train_d = True
         log1 = - torch.log(discriminator(target))
-        log2 = - torch.log(Tensor(np.ones(1)).cuda() - img)
+        log2 = - torch.log(Tensor(np.ones(1)).cuda() - img.detach())
         loss_d = log1 + log2
     else:
         train_d = False
