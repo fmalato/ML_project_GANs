@@ -65,14 +65,14 @@ def multiple_train(net, criterions, optimizer, device, epochs, batch_size=1):
                     valid = []
                     valid_true = []
                     valid_false = []
-                    while len(valid) < 10:
-                        valid = [random.randint(0, max_idx) for j in range(10)]
-                    for j in range(10):
+                    while len(valid) < 5:
+                        valid = [random.randint(0, max_idx) for j in range(5)]
+                    for j in range(5):
                         valid_true.append(tens(square_patch('data/target/{x}'.format(x=train_data[j]),
                                                             size=128)[0]).cuda().view((1, 3, 128, 128)))
                         valid_false.append(
                             net(tens(square_patch('data/train/{x}'.format(x=train_data[j]),
-                                                  size=32)[0]).cuda().view((1, 3, 32, 32))))
+                                                  size=32)[0]).cuda().view((1, 3, 32, 32))).detach())
                     loss_g, loss_d, train_d = criterion(disc, device, output, targets.to(device), valid_true, valid_false)
                     loss += loss_g
                 elif criterion == LossT:
