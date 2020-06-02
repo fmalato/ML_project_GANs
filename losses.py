@@ -34,36 +34,44 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(discriminator, device, image, target, valid_true, valid_false):
+def LossA(generator, discriminator, device, image, target, optim_d, lossT=False):
+
+    criterion = nn.BCELoss()
+    train_d = False
+    # Discriminator
+    optim_d.zero_grad()
+    disc_train_real = target.to(device)
+    batch_size = disc_train_real.size(0)
+    label = torch.full((batch_size,), 1, device=device).cuda()
+    output_d = discriminator(disc_train_real).view(-1)
+    loss_d_real = criterion(output_d, label).cuda()
+    if lossT:
+        loss_d_real *= 2
+    if loss_d_real.item() > 0.3:
+        loss_d_real.backward()
+        train_d = True
+
+    output_g = generator(image)
+    output_d = discriminator(output_g.detach())
+    label.fill_(0)
+    loss_d_fake = criterion(output_d, label).cuda()
+    if lossT:
+        loss_d_fake *= 2
+    loss_d = loss_d_real + loss_d_fake
+    if loss_d_fake.item() > 0.3:
+        loss_d_fake.backward()
+        train_d = True
+    if train_d:
+        optim_d.step()
 
     # Generator
-    img = discriminator(image.to(device).detach())
-    loss_g = -torch.log(img).cuda()
-    # Discriminator
-    with torch.no_grad():
-        right_true = 0
-        right_false = 0
-        for el in valid_true:
-            pred = torch.round(discriminator(el)).reshape(1)
-            if pred.item() == 1.0:
-                right_true += 1
-        for el in valid_false:
-            pred = torch.round(discriminator(el.detach())).reshape(1)
-            if pred.item() == 0.0:
-                right_false += 1
-        right_true = right_true / len(valid_true)
-        right_false = right_false / len(valid_false)
-    # If discriminator gets < 80% accuracy
-    if right_true < 0.8 or right_false < 0.8:
-        train_d = True
-        log1 = - torch.log(discriminator(target))
-        log2 = - torch.log(Tensor(np.ones(1)).cuda() - img.detach())
-        loss_d = log1 + log2
-    else:
-        train_d = False
-        loss_d = Tensor(np.zeros(1)).cuda()
-    # 2 if training PAT, 1 if training PA
-    return 1 * loss_g.reshape(1), 1 * loss_d.reshape(1), train_d
+    label.fill_(1)
+    output_d = discriminator(output_g).view(-1)
+    loss_g = criterion(output_d, label).cuda()
+    if lossT:
+        loss_g *= 2
+
+    return loss_g, loss_d
 
 
 """ Texture Loss """
