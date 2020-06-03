@@ -61,9 +61,9 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
                 elif criterion == LossA:
                     if LossT in criterions:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images, targets.to(device), optim_d, True)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), optim_d, True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images, targets.to(device), optim_d, False)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), optim_d, False)
                     loss += loss_g
 
                 elif criterion == LossT:
@@ -84,8 +84,8 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                 end_step = time.perf_counter()
                 print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f  D(x): %f  D(G(z)): %f / %f' % (e + 1, epochs,
                                                                                                          i, len(data_loader),
-                                                                                                         sum(losses) / 1,
-                                                                                                         sum(losses_d) / 1 if lossA else 'N/A',
+                                                                                                         sum(losses) / 100,
+                                                                                                         sum(losses_d) / 100 if lossA else 'N/A',
                                                                                                          D_x,
                                                                                                          D_G_z1,
                                                                                                          D_G_z2))
