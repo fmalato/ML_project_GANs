@@ -1,6 +1,6 @@
 import numpy as np
 import time
-import os
+import os, re
 import random
 import torch
 import torch.nn as nn
@@ -16,7 +16,7 @@ from utils import init_weights, square_patch
 from losses import LossE, LossP, LossA, LossT
 
 
-def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, intermediate_step=False):
+def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, intermediate_step=False, load_weights=False, state_dict=''):
     net.train()
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -25,6 +25,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
     losses_d = []
     criterions = []
     D_x = D_G_z1 = D_G_z2 = 0.0
+    if load_weights:
+        print('Loading {x}'.format(x=state_dict))
+        net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=state_dict), map_location=torch.device('cpu')))
+        starting_epoch = int(re.sub("[^0-9]", "", state_dict))
     for el in loss_type:
         if el == 'E':
             criterions.append(LossE)
@@ -110,7 +114,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
         print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
 
     print('Saving checkpoint.')
-    torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e+1, mode=''.join(loss_type)))
+    if load_weights:
+        torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e+starting_epoch+1, mode=''.join(loss_type)))
+    else:
+        torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e + 1, mode=''.join(loss_type)))
 
 
 if __name__ == '__main__':
@@ -121,7 +128,8 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=5, batch_size=batch_size, intermediate_step=False)
+    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=5, batch_size=batch_size,
+                   intermediate_step=False,load_weights=True, state_dict='state_5e_PA')
 
 
 
