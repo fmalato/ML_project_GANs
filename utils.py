@@ -104,8 +104,12 @@ def square_patch(img_path, size=32):
 
 
 def init_weights(model):
-    if type(model) == nn.Conv2d:
-        torch.nn.init.xavier_normal_(model.weight)
+    classname = model.__class__.__name__
+    if classname.find('Conv') != -1:
+        nn.init.xavier_normal_(model.weight.data)
+    elif classname.find('BatchNorm') != -1:
+        nn.init.normal_(model.weight.data, 1.0, 0.02)
+        nn.init.constant_(model.bias.data, 0)
 
 def remove_grayscale():
     for el in os.listdir('data/train/'):

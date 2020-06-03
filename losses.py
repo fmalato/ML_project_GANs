@@ -38,7 +38,7 @@ def LossA(generator, discriminator, device, image, target, optim_d, lossT=False)
 
     criterion = nn.BCELoss()
     train_d = False
-    # Discriminator
+    # Discriminator true
     optim_d.zero_grad()
     disc_train_real = target.to(device)
     batch_size = disc_train_real.size(0)
@@ -50,11 +50,13 @@ def LossA(generator, discriminator, device, image, target, optim_d, lossT=False)
     if loss_d_real.item() > 0.3:
         loss_d_real.backward()
         train_d = True
-
+    D_x = output_d.mean().item()
+    # Discriminator false
     output_g = generator(image)
-    output_d = discriminator(output_g.detach())
+    output_d = discriminator(output_g.detach()).view(-1)
     label.fill_(0)
     loss_d_fake = criterion(output_d, label).cuda()
+    D_G_z1 = output_d.mean().item()
     if lossT:
         loss_d_fake *= 2
     loss_d = loss_d_real + loss_d_fake
@@ -68,10 +70,11 @@ def LossA(generator, discriminator, device, image, target, optim_d, lossT=False)
     label.fill_(1)
     output_d = discriminator(output_g).view(-1)
     loss_g = criterion(output_d, label).cuda()
+    D_G_z2 = output_d.mean().item()
     if lossT:
         loss_g *= 2
 
-    return loss_g, loss_d
+    return loss_g, loss_d, D_x, D_G_z1, D_G_z2
 
 
 """ Texture Loss """
