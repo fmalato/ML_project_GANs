@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=1, batch_size=batch_size, intermediate_step=False)
+    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=5, batch_size=batch_size, intermediate_step=False)
 
 
 
