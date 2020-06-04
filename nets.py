@@ -15,6 +15,7 @@ class ResidualBlock(nn.Module):
         self.in_channels, self.out_channels = in_channels, out_channels
         self.block1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('batch1', nn.BatchNorm2d(64)),
             ('relu1', nn.ReLU()),
             ]))
         self.block2 = nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))
@@ -40,6 +41,7 @@ class FCNN(nn.Module):
 
         self.conv1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('batch1', nn.BatchNorm2d(64)),
             ('relu1', nn.ReLU())
         ]))
         self.residual = nn.Sequential(OrderedDict([
@@ -57,19 +59,23 @@ class FCNN(nn.Module):
         self.upsamp1 = nn.Sequential(OrderedDict([
             ('up1ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
             ('up1conv', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('batch1', nn.BatchNorm2d(64)),
             ('up1relu', nn.ReLU())
         ]))
         self.upsamp2 = nn.Sequential(OrderedDict([
             ('up2ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
             ('up2conv', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('batch1', nn.BatchNorm2d(64)),
             ('up2relu', nn.ReLU())
         ]))
         self.conv2 = nn.Sequential(OrderedDict([
             ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
+            ('batch1', nn.BatchNorm2d(64)),
             ('relu2', nn.ReLU())
         ]))
         self.conv3 = nn.Sequential(OrderedDict([
-            ('c3', nn.Conv2d(64, 3, kernel_size=(3, 3), padding=(1, 1)))
+            ('c3', nn.Conv2d(64, 3, kernel_size=(3, 3), padding=(1, 1))),
+            ('batch1', nn.BatchNorm2d(3))
         ]))
 
     def forward(self, x):
