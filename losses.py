@@ -37,7 +37,7 @@ def LossP(vgg, device, image, target):
 def LossA(generator, discriminator, device, image, target, optim_d, lossT=False):
     disc_train_real = target.to(device)
     batch_size = disc_train_real.size(0)
-    train_d = False
+    #train_d = False
     if lossT:
         criterion = nn.BCELoss(weight=torch.full((batch_size,), 2, device=device))
     else:
@@ -46,27 +46,30 @@ def LossA(generator, discriminator, device, image, target, optim_d, lossT=False)
     optim_d.zero_grad()
     label = torch.full((batch_size,), 1, device=device).cuda()
     output_d = discriminator(disc_train_real).view(-1)
-    good = len([1 for x in output_d.tolist() if x >= 0.5])
-    perf_1 = good / batch_size
+    #good = len([1 for x in output_d.tolist() if x >= 0.5])
+    #perf_1 = good / batch_size
     loss_d_real = criterion(output_d, label).cuda()
     D_x = output_d.mean().item()
-    if perf_1 < 0.8:
+    """if perf_1 < 0.9:
         loss_d_real.backward()
-        train_d = True
+        train_d = True"""
+    loss_d_real.backward()
     # Discriminator false
     output_g = generator(image)
     output_d = discriminator(output_g.detach()).view(-1)
-    good = len([0 for x in output_d.tolist() if x < 0.5])
-    perf_0 = good / batch_size
+    #good = len([0 for x in output_d.tolist() if x < 0.5])
+    #perf_0 = good / batch_size
     label.fill_(0)
     loss_d_fake = criterion(output_d, label).cuda()
     D_G_z1 = output_d.mean().item()
     loss_d = loss_d_real + loss_d_fake
-    if perf_0 < 0.8:
+    """if perf_0 < 0.9:
         loss_d_fake.backward()
         train_d = True
     if train_d:
-        optim_d.step()
+        optim_d.step()"""
+    loss_d_fake.backward()
+    optim_d.step()
 
     # Generator
     label.fill_(1)
