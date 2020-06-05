@@ -4,15 +4,16 @@ import os, random
 from torch.utils.data import Dataset
 from PIL import Image
 
-from utils import random_crop, square_patch
+from utils import random_crop, square_patch, custom_bicubic
 
 class COCO(Dataset):
 
-    def __init__(self, image_paths, target_paths):   # initial logic happens like transform
+    def __init__(self, image_paths, target_paths, scale_factor=4):   # initial logic happens like transform
 
         self.image_paths = image_paths
         self.target_paths = target_paths
         self.transforms = transforms.ToTensor()
+        self.scale_factor = scale_factor
 
     def __getitem__(self, index):
 
@@ -25,9 +26,11 @@ class COCO(Dataset):
         """p = random.randint(0, 3)
         image = square_patch(self.image_paths + os.listdir(self.image_paths)[index], 32)[p]
         target = square_patch(self.target_paths + os.listdir(self.target_paths)[index], 128)[p]"""
+        bicubic_res = image.resize((image.size[0] * self.scale_factor, image.size[1] * self.scale_factor), Image.BICUBIC)
         t_image = self.transforms(image)
         t_target = self.transforms(target)
-        return t_image, t_target
+        t_bicub = self.transforms(bicubic_res)
+        return t_image, t_target, t_bicub
 
     def __len__(self):  # return count of sample we have
 

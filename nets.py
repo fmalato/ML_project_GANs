@@ -78,7 +78,7 @@ class FCNN(nn.Module):
             ('batch1', nn.BatchNorm2d(3))
         ]))
 
-    def forward(self, x):
+    def forward(self, x, bicub_residual):
         y = self.conv1(x)
         y = self.residual(y)
         y = self.upsamp1(y)
@@ -88,7 +88,7 @@ class FCNN(nn.Module):
         y = self.conv3(y)
 
         #return (torch.add(y, custom_bicubic(x.cpu(), self.tens, self.pilimg, self.scale_factor).cuda())).clamp(0, 255)
-        return (torch.add(y, self.bicubic_upsample(x).clamp(0, 255)).cuda()).clamp(0, 255)
+        return torch.add(y, bicub_residual.cuda()).clamp(0, 255)
 
 
 class Discriminator(nn.Module):

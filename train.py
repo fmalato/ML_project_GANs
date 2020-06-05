@@ -50,14 +50,14 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
     for e in range(epochs):
         start = time.perf_counter()
         start_step = start
-        print('Epoch %d.' % e)
+        print('Epoch %d.' % (e+1))
         epoch_times = []
 
-        for i, (images, targets) in enumerate(data_loader):
+        for i, (images, targets, bicub) in enumerate(data_loader):
             optimizer.zero_grad()
 
             loss = Tensor(np.zeros(1)).cuda()
-            output = net(images.to(device))
+            output = net(images.to(device), bicub.to(device))
 
             for criterion in criterions:
                 if criterion == LossP:
@@ -65,9 +65,9 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
                 elif criterion == LossA:
                     if LossT in criterions:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), optim_d, True)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), bicub.to(device), optim_d, True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), optim_d, False)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), bicub.to(device), optim_d, False)
                     loss += loss_g
 
                 elif criterion == LossT:
@@ -86,7 +86,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
             if i % 100 == 0 and i is not 0:
                 end_step = time.perf_counter()
-                print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f  D(x): %f  D(G(z)): %f / %f' % (e + 1, epochs,
+                print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f  D(x): %f  D(G(z)): %f / %f' % (e+1, epochs,
                                                                                                          i, len(data_loader),
                                                                                                          sum(losses) / 100,
                                                                                                          sum(losses_d) / 100 if lossA else 'N/A',
@@ -111,13 +111,13 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                     torch.save(net.state_dict(), 'state_{d}e_{x}s_PA.pth')
 
         end = time.perf_counter()
-        print('Epoch %d ended, elapsed time: %f seconds.' % (e, round((end - start), 2)))
+        print('Epoch %d ended, elapsed time: %f seconds.' % (e+1, round((end - start), 2)))
 
     print('Saving checkpoint.')
     if load_weights:
         torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e+starting_epoch+1, mode=''.join(loss_type)))
     else:
-        torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e + 1, mode=''.join(loss_type)))
+        torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e+1, mode=''.join(loss_type)))
 
 
 if __name__ == '__main__':
@@ -128,8 +128,8 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=5, batch_size=batch_size,
-                   intermediate_step=False,load_weights=True, state_dict='state_5e_PA')
+    multiple_train(net, ['E'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=3, batch_size=batch_size,
+                   intermediate_step=False, load_weights=False, state_dict='state_5e_PA')
 
 
 
