@@ -74,7 +74,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                     loss += criterion(vgg_T, device, output, targets.to(device))
 
                 else:
-                    loss += criterion(vgg, device, output, targets.to(device))
+                    loss += criterion(device, output, targets.to(device))
 
             losses.append(loss.detach().cuda().item())
 
@@ -89,7 +89,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                 print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f  D(x): %f  D(G(z)): %f / %f' % (e+1, epochs,
                                                                                                          i, len(data_loader),
                                                                                                          sum(losses) / 100,
-                                                                                                         sum(losses_d) / 100 if lossA else 'N/A',
+                                                                                                         sum(losses_d) / 100 if lossA else 0.0,
                                                                                                          D_x,
                                                                                                          D_G_z1,
                                                                                                          D_G_z2))
@@ -121,15 +121,18 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
 
 if __name__ == '__main__':
-    batch_size = 16
+    batch_size = 32
+    epochs = 7
+    lr = 1e-4
+    state_dict = ''
     net = FCNN(input_channels=3, batch_size=batch_size)
     net.cuda()
     net.apply(init_weights)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    multiple_train(net, ['E'], optim.Adam(net.parameters(), lr=1e-4), device, epochs=3, batch_size=batch_size,
-                   intermediate_step=False, load_weights=False, state_dict='state_5e_PA')
+    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
+                   intermediate_step=False, load_weights=False, state_dict=state_dict)
 
 
 
