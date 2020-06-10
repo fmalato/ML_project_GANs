@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import torch.nn as nn
+import random
 
 from utils import gram_matrix
 from torch import Tensor
@@ -37,42 +38,32 @@ def LossP(vgg, device, image, target):
 def LossA(generator, discriminator, device, image, target, bicub, optim_d, lossT=False):
     disc_train_real = target.to(device)
     batch_size = disc_train_real.size(0)
-    #train_d = False
+
     if lossT:
         criterion = nn.BCELoss(weight=torch.full((batch_size,), 2, device=device))
     else:
         criterion = nn.BCELoss(weight=torch.full((batch_size,), 1, device=device))
     # Discriminator true
     optim_d.zero_grad()
-    label = torch.full((batch_size,), 1, device=device).cuda()
+    label = torch.full((batch_size,), random.uniform(0.9, 1.0), device=device).cuda()
     output_d = discriminator(disc_train_real).view(-1)
-    #good = len([1 for x in output_d.tolist() if x >= 0.5])
-    #perf_1 = good / batch_size
     loss_d_real = criterion(output_d, label).cuda()
     D_x = output_d.mean().item()
-    """if perf_1 < 0.9:
-        loss_d_real.backward()
-        train_d = True"""
     loss_d_real.backward()
+
     # Discriminator false
     output_g = generator(image, bicub)
     output_d = discriminator(output_g.detach()).view(-1)
-    #good = len([0 for x in output_d.tolist() if x < 0.5])
-    #perf_0 = good / batch_size
-    label.fill_(0)
+    label.fill_(random.uniform(0.0, 0.1))
     loss_d_fake = criterion(output_d, label).cuda()
     D_G_z1 = output_d.mean().item()
     loss_d = loss_d_real + loss_d_fake
-    """if perf_0 < 0.9:
-        loss_d_fake.backward()
-        train_d = True
-    if train_d:
-        optim_d.step()"""
+
     loss_d_fake.backward()
     optim_d.step()
 
     # Generator
-    label.fill_(1)
+    label.fill_(random.uniform(0.9, 1.0))
     output_d = discriminator(output_g).view(-1)
     loss_g = criterion(output_d, label).cuda()
     D_G_z2 = output_d.mean().item()
@@ -81,37 +72,38 @@ def LossA(generator, discriminator, device, image, target, bicub, optim_d, lossT
 
 
 """ Texture Loss """
-def LossT(vgg, device, image, target):
+def LossT(vgg, device, image, target, patch_size=16):
     criterion = nn.MSELoss()
-    criterion.cuda()
-    loss = 0.0
+
     vgg_1 = vgg[0]
     vgg_2 = vgg[1]
     vgg_3 = vgg[2]
-    vgg_1.cuda()
-    vgg_2.cuda()
-    vgg_3.cuda()
-    image = image.view((3, image.shape[2], image.shape[3]))
-    target = target.view((3, target.shape[2], target.shape[3]))
-    patches = image.data.unfold(0, 3, 3).unfold(1, 16, 16).unfold(2, 16, 16)
-    patches_target = target.data.unfold(0, 3, 3).unfold(1, 16, 16).unfold(2, 16, 16)
-    batch_size = patches.shape[1] * patches.shape[2]
-    patches = patches.reshape((batch_size, 3, 16, 16))
-    patches_target = patches_target.reshape((batch_size, 3, 16, 16))
-    pat_list = torch.split(patches, batch_size)
-    pat_list = pat_list[0]
-    pat_tar_list = torch.split(patches_target, batch_size)
-    pat_tar_list = pat_tar_list[0]
-    loss_1 = loss_2 = loss_3 = 0.0
-    for i in range(batch_size / 16):
-        loss_1 += criterion(gram_matrix(vgg_1(pat_list[i].view((1, 3, 16, 16)))),
-                            gram_matrix(vgg_1(pat_tar_list[i].view((1, 3, 16, 16)))))
-        loss_2 += criterion(gram_matrix(vgg_2(pat_list[i].view((1, 3, 16, 16)))),
-                            gram_matrix(vgg_2(pat_tar_list[i].view((1, 3, 16, 16)))))
-        loss_3 += criterion(gram_matrix(vgg_3(pat_list[i].view((1, 3, 16, 16)))),
-                            gram_matrix(vgg_3(pat_tar_list[i].view((1, 3, 16, 16)))))
+    image = torch.split(image, 1, dim=0)
+    img_size = image[0].shape[2]
+    batch_size = int(img_size / patch_size)**2
+    patches = []
+    for el in image:
+        new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
+        new = new.reshape((batch_size, 3, patch_size, patch_size))
+        patches.append(new)
+    patches = torch.cat(patches)
+    patches.to(device)
+    target = torch.split(target, 1, dim=0)
+    img_size = target[0].shape[2]
+    batch_size = int(img_size / patch_size) ** 2
+    patches_target = []
+    for el in target:
+        new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
+        new = new.reshape((batch_size, 3, patch_size, patch_size))
+        patches_target.append(new)
+    patches_target = torch.cat(patches_target)
+    patches_target.to(device)
 
-    return (3e-7) * torch.div(loss_1, batch_size) + (1e-6) * torch.div(loss_2, batch_size) + (1e-6) * torch.div(loss_3, batch_size)
+    loss_1 = criterion(gram_matrix(vgg_1(patches)), gram_matrix(vgg_1(patches_target)))
+    loss_2 = criterion(gram_matrix(vgg_2(patches)), gram_matrix(vgg_2(patches_target)))
+    loss_3 = criterion(gram_matrix(vgg_3(patches)), gram_matrix(vgg_3(patches_target)))
+
+    return (3e-7) * loss_1 + (1e-6) * loss_2 + (1e-6) * loss_3
 
 
 

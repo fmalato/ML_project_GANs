@@ -1,5 +1,6 @@
 import torchvision.transforms as transforms
 import os, random
+import numpy as np
 
 from torch.utils.data import Dataset
 from PIL import Image
@@ -27,6 +28,10 @@ class COCO(Dataset):
         image = square_patch(self.image_paths + os.listdir(self.image_paths)[index], 32)[p]
         target = square_patch(self.target_paths + os.listdir(self.target_paths)[index], 128)[p]"""
         bicubic_res = image.resize((image.size[0] * self.scale_factor, image.size[1] * self.scale_factor), Image.BICUBIC)
+        # erase this to eliminate residual learning
+        target = np.asarray(target) - np.asarray(bicubic_res)
+        target = Image.fromarray(target)
+        # until here
         t_image = self.transforms(image)
         t_target = self.transforms(target)
         t_bicub = self.transforms(bicubic_res)

@@ -131,7 +131,7 @@ def gram_matrix(input):
 
     # we 'normalize' the values of the gram matrix
     # by dividing by the number of element in each feature maps.
-    return G.div(a * b * c * d)
+    return G
 
 def custom_bicubic(input_tensor, transf_to_tensor, transf_to_img, scale_factor=4):
 
