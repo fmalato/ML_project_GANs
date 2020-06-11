@@ -65,6 +65,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
             loss = Tensor(np.zeros(1)).cuda()
             output = net(images.float(), bicub.float())
+            output = torch.add(output, bicub)
 
             for criterion in criterions:
                 if criterion == LossP:
