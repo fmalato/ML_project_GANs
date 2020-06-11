@@ -19,6 +19,8 @@ class COCO(Dataset):
         self.patch_size = patch_size
         self.upsample_size = self.patch_size * self.scale_factor
         self.PER_CHANNEL_MEANS = np.array([0.47614917, 0.45001204, 0.40904046])
+        self.train_imgs = os.listdir(self.image_paths)
+        self.target_imgs = os.listdir(self.target_paths)
 
     def __getitem__(self, index):
 
@@ -28,8 +30,9 @@ class COCO(Dataset):
                                     target_scale=4)"""
         #image = Image.open(self.image_paths + os.listdir(self.image_paths)[index])
         #target = Image.open(self.target_paths + os.listdir(self.target_paths)[index])
-        image = square_patch(self.image_paths + os.listdir(self.image_paths)[index], self.patch_size)
-        target = square_patch(self.target_paths + os.listdir(self.target_paths)[index], self.patch_size * self.scale_factor)
+        image = square_patch(self.image_paths + self.train_imgs[index], self.patch_size)
+        target = square_patch(self.target_paths + self.target_imgs[index], self.patch_size * self.scale_factor)
+        idx = random.randint(0, 3)
         patches = []
         patches_target = []
         bicubic_res = []
