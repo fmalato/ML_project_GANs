@@ -101,7 +101,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                                                                                                          D_G_z1,
                                                                                                          D_G_z2))
                 epoch_times.append(end_step - start_step)
-                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (int(149400 / batch_size) - i) / 100, 3600)
+                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (int(232013 / batch_size) - i) / 100, 3600)
                 minutes, seconds = divmod(rem, 60)
                 print('Time for the last step: {:05.2f} s    Epoch ETA: {:0>2}:{:0>2}:{:0>2}'.format(
                     end_step - start_step,
@@ -128,9 +128,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
 
 if __name__ == '__main__':
-    batch_size = 32
-    epochs = 7
+    batch_size = 48
+    epochs = 3
     lr = 1e-4
+    load_weights = False
     state_dict = ''
     net = FCNN(input_channels=3, batch_size=batch_size)
     net.float()
@@ -139,8 +140,8 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    multiple_train(net, ['P', 'A'], optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
-                   intermediate_step=False, load_weights=False, state_dict=state_dict)
+    multiple_train(net, ['E'], optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
+                   intermediate_step=False, load_weights=load_weights, state_dict=state_dict)
 
 
 
