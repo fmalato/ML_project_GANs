@@ -59,13 +59,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
             images = images.view((-1, images.shape[2], images.shape[3], images.shape[4]))
             targets = targets.view((-1, targets.shape[2], targets.shape[3], targets.shape[4]))
             bicub = bicub.view((-1, bicub.shape[2], bicub.shape[3], bicub.shape[4]))
-            images.cuda()
-            targets.cuda()
-            bicub.cuda()
 
             loss = Tensor(np.zeros(1)).cuda()
-            output = net(images.float(), bicub.float())
-            output = torch.add(output, bicub)
+            output = net(images.float().to(device), bicub.float().to(device))
+            output = torch.add(output.to(device), bicub.to(device))
 
             for criterion in criterions:
                 if criterion == LossP:
@@ -82,7 +79,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                     loss += criterion(vgg_T, device, output.float(), targets.float())
 
                 else:
-                    loss += criterion(device, output.float(), targets.float())
+                    loss += criterion(device, output.float().to(device), targets.float().to(device))
 
             losses.append(loss.detach().cuda().item())
 
