@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from torch.utils.data import Dataset
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 from utils import random_crop, square_patch, custom_bicubic
 
@@ -23,7 +23,7 @@ class COCO(Dataset):
         self.target_imgs = os.listdir(self.target_paths)
 
     def __getitem__(self, index):
-
+        PngImagePlugin.MAX_TEXT_CHUNK = 1000*(1024**2)
         """image, target = random_crop(Image.open(self.image_paths + os.listdir(self.image_paths)[index]),
                                     Image.open(self.target_paths + os.listdir(self.target_paths)[index]),
                                     image_max_range=32,
