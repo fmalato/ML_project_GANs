@@ -65,6 +65,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
             loss = Tensor(np.zeros(1)).cuda()
             output = net(images.float(), bicub.float())
+            output = torch.add(output, bicub)
 
             for criterion in criterions:
                 if criterion == LossP:
@@ -128,9 +129,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
 
 if __name__ == '__main__':
-    batch_size = 48
-    epochs = 3
+    batch_size = 16
+    epochs = 1
     lr = 1e-4
+    loss_type = ['E']
     load_weights = False
     state_dict = ''
     net = FCNN(input_channels=3, batch_size=batch_size)
@@ -140,8 +142,13 @@ if __name__ == '__main__':
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    multiple_train(net, ['E'], optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
-                   intermediate_step=False, load_weights=load_weights, state_dict=state_dict)
+    try:
+        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
+                       intermediate_step=False, load_weights=load_weights, state_dict=state_dict)
+    except KeyboardInterrupt:
+        print('Training interrupted. Saving model.')
+        torch.save(net.state_dict(), 'state_int_{x}e_{mode}.pth'.format(x=epochs, mode=''.join(loss_type)))
+
 
 
 
