@@ -34,18 +34,19 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
             criterions.append(LossE)
         elif el == 'P':
             criterions.append(LossP)
-            vgg = [VGGFeatureExtractor(), VGGFeatureExtractor(pool_layer_num=36)]
+            vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
         elif el == 'A':
             criterions.append(LossA)
             disc = Discriminator()
+            disc.float()
             disc.cuda()
             optim_d = optim.Adam(disc.parameters(), lr=1e-4)
             lossA = True
         elif el == 'T':
             criterions.append(LossT)
-            vgg_T = [VGGFeatureExtractor(pool_layer_num=0),
-                     VGGFeatureExtractor(pool_layer_num=5),
-                     VGGFeatureExtractor(pool_layer_num=10)]
+            vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
+                     VGGFeatureExtractor(pool_layer_num=5).float(),
+                     VGGFeatureExtractor(pool_layer_num=10).float()]
 
     for e in range(epochs):
         start = time.perf_counter()
@@ -55,26 +56,32 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
         for i, (images, targets, bicub) in enumerate(data_loader):
             optimizer.zero_grad()
+            images = images.view((-1, images.shape[2], images.shape[3], images.shape[4]))
+            targets = targets.view((-1, targets.shape[2], targets.shape[3], targets.shape[4]))
+            bicub = bicub.view((-1, bicub.shape[2], bicub.shape[3], bicub.shape[4]))
+            images.cuda()
+            targets.cuda()
+            bicub.cuda()
 
             loss = Tensor(np.zeros(1)).cuda()
-            output = net(images.to(device), bicub.to(device))
+            output = net(images.float(), bicub.float())
 
             for criterion in criterions:
                 if criterion == LossP:
-                    loss += criterion(vgg, device, output, targets.to(device))
+                    loss += criterion(vgg, device, output.float(), targets.float())
 
                 elif criterion == LossA:
                     if LossT in criterions:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), bicub.to(device), optim_d, True)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float(), targets.float(), bicub.float(), optim_d, True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.to(device), targets.to(device), bicub.to(device), optim_d, False)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float(), targets.float(), bicub.float(), optim_d, False)
                     loss += loss_g
 
                 elif criterion == LossT:
-                    loss += criterion(vgg_T, device, output, targets.to(device))
+                    loss += criterion(vgg_T, device, output.float(), targets.float())
 
                 else:
-                    loss += criterion(device, output, targets.to(device))
+                    loss += criterion(device, output.float(), targets.float())
 
             losses.append(loss.detach().cuda().item())
 
@@ -126,6 +133,7 @@ if __name__ == '__main__':
     lr = 1e-4
     state_dict = ''
     net = FCNN(input_channels=3, batch_size=batch_size)
+    net.float()
     net.cuda()
     net.apply(init_weights)
 

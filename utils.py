@@ -37,11 +37,11 @@ def generate_dataset(src, dst, scale=4):
         orig = Image.open(src + '/{x}'.format(x=imgs[i]))
         img = crop_central_square(orig)
         i_hr = img.resize((256, 256), Image.ANTIALIAS)
-        i_lr = img.resize((int(256 / scale), int(256 / scale)))
+        i_lr = img.resize((int(256 / scale), int(256 / scale)), Image.ANTIALIAS)
         i_hr.save(dst + '/target/{x}'.format(x=imgs[i]), 'PNG')
         i_lr.save(dst + '/train/{x}'.format(x=imgs[i]), 'PNG')
         if i % 100 == 0:
-            print('completate: %d / %d' % (i, len(imgs)))
+            print('Processed: %d / %d' % (i, len(imgs)))
 
     print('Done.')
 
@@ -144,3 +144,64 @@ def custom_bicubic(input_tensor, transf_to_tensor, transf_to_img, scale_factor=4
 
     return x_t
 
+def denoise(im,U_init,tolerance=0.1,tau=0.125,tv_weight=100):
+  """ An implementation of the Rudin-Osher-Fatemi (ROF) denoising model
+    using the numerical procedure presented in eq (11) A. Chambolle (2005).
+
+    Input: noisy input image (grayscale), initial guess for U, weight of
+    the TV-regularizing term, steplength, tolerance for stop criterion.
+
+    Output: denoised and detextured image, texture residual. """
+
+  m,n = im.size # size of noisy image
+
+  # initialize
+  U = U_init
+  Px = im # x-component to the dual field
+  Py = im # y-component of the dual field
+  error = 1
+
+  while (error > tolerance):
+    Uold = U
+
+    # gradient of primal variable
+    GradUx = np.roll(U,-1,axis=1)-U # x-component of U's gradient
+    GradUy = np.roll(U,-1,axis=0)-U # y-component of U's gradient
+
+    # update the dual varible
+    PxNew = Px + (tau/tv_weight)*GradUx
+    PyNew = Py + (tau/tv_weight)*GradUy
+    NormNew = np.maximum(1,np.sqrt(PxNew**2+PyNew**2))
+
+    Px = PxNew/NormNew # update of x-component (dual)
+    Py = PyNew/NormNew # update of y-component (dual)
+
+    # update the primal variable
+    RxPx = np.roll(Px,1,axis=1) # right x-translation of x-component
+    RyPy = np.roll(Py,1,axis=0) # right y-translation of y-component
+
+    DivP = (Px-RxPx)+(Py-RyPy) # divergence of the dual field.
+    U = im + tv_weight*DivP # update of the primal variable
+
+    # update of error
+    error = np.linalg.norm(U-Uold)/np.sqrt(n*m);
+
+  return U,im-U # denoised image and texture residual
+
+
+"""img = Image.open("evaluation/Set5/hr/bird.png")
+img_rgb = img
+img = img.convert('L')
+bic = Image.open("evaluation/Set5/lr/bird.png")
+bic = bic.resize((bic.size[0] * 4, bic.size[1] * 4), Image.BICUBIC)
+bic_rgb = bic
+bic = bic.convert('L')
+
+_, res = denoise(img, bic)
+res = Image.fromarray(res)
+res = res.convert('RGB')
+target = np.asarray(bic_rgb) + np.asarray(res)
+target = Image.fromarray(np.clip(target, a_min=0, a_max=255))
+res.show()
+bic.show()
+target.show()"""

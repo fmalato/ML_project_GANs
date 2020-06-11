@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_3e_E', 'state_3e_P', 'state_14e_PA', 'state_5e_EA']
+    tests = ['state_8e_EA']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
