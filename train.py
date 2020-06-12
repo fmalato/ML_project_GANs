@@ -130,8 +130,8 @@ if __name__ == '__main__':
     epochs = 1
     lr = 1e-4
     loss_type = ['E']
-    load_weights = False
-    state_dict = ''
+    load_weights = True
+    state_dict = 'state_1e_E'
     net = FCNN(input_channels=3, batch_size=batch_size)
     net.float()
     net.cuda()
