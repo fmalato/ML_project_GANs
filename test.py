@@ -66,13 +66,12 @@ def test_single(net, image_folder, image_name, criterion):
     o = toimg(o.astype(np.uint8))
     if image_name == "baby.png":
         o.show()
-    bicub_res = np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS))
-    # TODO: check those artifacts
-    result = o + bicub_res
-    if image_name == "baby.png":
-        with open('result.txt', 'a+') as f:
-            f.write(str(result))
-    result = Image.fromarray(result.astype(np.uint8))
+    bicub_res = np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS)).astype(np.uint8)
+    out = np.asarray(o).astype(np.uint8)
+    c = 255 - out  # a temp uint8 array here
+    np.putmask(bicub_res, c < bicub_res, c)  # a temp bool array here
+    result = out + bicub_res
+    result = Image.fromarray(result)
     if image_name == "baby.png":
         result.show()
     #output = torch.add(output, bicub_res).clamp(0, 255)
