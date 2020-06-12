@@ -39,20 +39,21 @@ def psnr(lr_path, hr_path):
 
 def test_single(net, image_folder, image_name, criterion):
     net.eval()
+    PER_CHANNEL_MEANS = np.array([0.47614917, 0.45001204, 0.40904046])
     img = Image.open(image_folder + 'lr/' + image_name)
     target = Image.open(image_folder + 'hr/' + image_name)
     tens = transforms.ToTensor()
-    bicub_res = img.resize((img.size[0] * 4, img.size[1] * 4), Image.BICUBIC)
-    #res = np.asarray(target) - np.asarray(bicub_res)
-    #res = Image.fromarray(target)
+    toimg = transforms.ToPILImage()
 
     target = tens(target)
     target = target.view((1, 3, 256, 256))
     input = tens(img)
-    bicub_res = tens(img.resize((img.size[0] * 4, img.size[1] * 4), Image.BICUBIC))
+    bicub_res = tens(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS))
 
     input = input.view((1, 3, 64, 64))
     output = net(input, bicub_res)
+    output = torch.add(output, bicub_res).clamp(0, 255)
+
 
     #loss = criterion(tens(res).view((1, 3, 256, 256)), output)
 
@@ -66,8 +67,12 @@ def test_single(net, image_folder, image_name, criterion):
 
     trans = transforms.ToPILImage(mode='RGB')
     if image_name == 'bird.png':
+        # TODO: get the right transform
+        output_img = (np.asarray(toimg(output.view(3, 256, 256))) + PER_CHANNEL_MEANS)
+        output_img = Image.fromarray(output_img.astype(np.uint8))
         output = output.view((3, 256, 256))
         output = trans(output)
+        output_img.show()
         output.show(title="Guessing")
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % score)
     return score
@@ -77,7 +82,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_8e_EA']
+    tests = ['state_1e_E']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
