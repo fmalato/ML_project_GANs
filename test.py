@@ -11,7 +11,7 @@ from PIL import Image
 from skimage import io
 
 from FCNN_CPU import FCNN
-from utils import crop_central_square, custom_bicubic
+from utils import crop_central_square, custom_bicubic, translate
 from losses import LossE, LossP, LossA, LossT
 
 
@@ -39,7 +39,10 @@ def psnr(lr_path, hr_path):
 
 def test_single(net, image_folder, image_name, criterion):
     net.eval()
-    PER_CHANNEL_MEANS = np.array([0.47614917, 0.45001204, 0.40904046])
+    PER_CHANNEL_MEANS = np.zeros((3, 256, 256))
+    PER_CHANNEL_MEANS[0].fill(0.47614917)
+    PER_CHANNEL_MEANS[1].fill(0.45001204)
+    PER_CHANNEL_MEANS[2].fill(0.40904046)
     img = Image.open(image_folder + 'lr/' + image_name)
     target = Image.open(image_folder + 'hr/' + image_name)
     tens = transforms.ToTensor()
@@ -47,15 +50,32 @@ def test_single(net, image_folder, image_name, criterion):
 
     target = tens(target)
     target = target.view((1, 3, 256, 256))
-    input = tens(img)
-    bicub_res = tens(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS))
+    #img.show()
+    inp = tens(img)
+    bicub_res = torch.from_numpy(np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS)) / 255).view((1, 3, 256, 256))
 
-    input = input.view((1, 3, 64, 64))
-    output = net(input, bicub_res)
-    output = torch.add(output, bicub_res).clamp(0, 255)
-
-
-    #loss = criterion(tens(res).view((1, 3, 256, 256)), output)
+    inp = inp.view((1, 3, 64, 64))
+    output = net(inp, bicub_res)
+    output = torch.add(output, torch.from_numpy(PER_CHANNEL_MEANS).view((1, 3, 256, 256))).clamp(0, 255)
+    o = output.view((3, 256, 256))
+    o = o.data.numpy()
+    o = np.swapaxes(o, 0, 1)
+    o = np.swapaxes(o, 1, 2)
+    #o = o.reshape((256, 256, 3))
+    o = o * 255
+    o = toimg(o.astype(np.uint8))
+    if image_name == "baby.png":
+        o.show()
+    bicub_res = np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS))
+    # TODO: check those artifacts
+    result = o + bicub_res
+    if image_name == "baby.png":
+        with open('result.txt', 'a+') as f:
+            f.write(str(result))
+    result = Image.fromarray(result.astype(np.uint8))
+    if image_name == "baby.png":
+        result.show()
+    #output = torch.add(output, bicub_res).clamp(0, 255)
 
     # PSNR:
     score = psnr(output.detach().numpy() / 255, np.array(target) / 255)
@@ -65,15 +85,12 @@ def test_single(net, image_folder, image_name, criterion):
     # PSNR from tensorflow source code
     #psnr = 20 * math.log(255) / math.log(10.0) - np.float32(10 / np.log(10)) * math.log(loss)
 
-    trans = transforms.ToPILImage(mode='RGB')
-    if image_name == 'bird.png':
-        # TODO: get the right transform
-        output_img = (np.asarray(toimg(output.view(3, 256, 256))) + PER_CHANNEL_MEANS)
-        output_img = Image.fromarray(output_img.astype(np.uint8))
-        output = output.view((3, 256, 256))
-        output = trans(output)
-        output_img.show()
-        output.show(title="Guessing")
+    if image_name == 'baby.png':
+        out = output.view((3, 256, 256))
+        out = torch.mul(out, 255)
+        output_img = toimg(out.detach().numpy().reshape((256, 256, 3)).astype(np.uint8))
+        #output_img = Image.fromarray(output_img.astype(np.uint8))
+        #output_img.show()
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % score)
     return score
 
@@ -82,7 +99,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_1e_E']
+    tests = ['state_2e_E']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
@@ -93,14 +110,14 @@ if __name__ == '__main__':
             avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss())
         avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
         print('Average psnr score is: %f' % avg_psnr)
-    img = Image.open('evaluation/Set5/lr/bird.png')
+    img = Image.open('evaluation/Set5/lr/baby.png')
     tens = transforms.ToTensor()
     pilimg = transforms.ToPILImage()
     img = custom_bicubic(tens(img).view((1, 3, img.size[0], img.size[1])), tens, pilimg, 4)
     img = img.view((3, 256, 256))
     img = pilimg(img)
     #lum = luminance(img)
-    img.show()
+    #img.show()
     #lum.show()
 
 

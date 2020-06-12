@@ -35,7 +35,7 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(generator, discriminator, device, image, target, bicub, optim_d, lossT=False):
+def LossA(generator, discriminator, device, image, target, bicub, optim_d, PCM, lossT=False):
     disc_train_real = target.float().to(device)
     batch_size = disc_train_real.size(0)
 
@@ -53,7 +53,7 @@ def LossA(generator, discriminator, device, image, target, bicub, optim_d, lossT
 
     # Discriminator false
     output_g = generator(image.float(), bicub.float())
-    output_d = discriminator(output_g.detach()).view(-1)
+    output_d = discriminator(torch.add(output_g.detach(), PCM).clamp(0, 255)).view(-1)
     label.fill_(random.uniform(0.0, 0.1))
     loss_d_fake = criterion(output_d.float(), label.float()).cuda()
     D_G_z1 = output_d.mean().item()

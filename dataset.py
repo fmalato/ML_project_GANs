@@ -28,11 +28,8 @@ class COCO(Dataset):
                                     Image.open(self.target_paths + os.listdir(self.target_paths)[index]),
                                     image_max_range=32,
                                     target_scale=4)"""
-        #image = Image.open(self.image_paths + os.listdir(self.image_paths)[index])
-        #target = Image.open(self.target_paths + os.listdir(self.target_paths)[index])
         image = square_patch(self.image_paths + self.train_imgs[index], self.patch_size)
         target = square_patch(self.target_paths + self.target_imgs[index], self.patch_size * self.scale_factor)
-        idx = random.randint(0, 3)
         patches = []
         patches_target = []
         bicubic_res = []

@@ -188,6 +188,10 @@ def denoise(im,U_init,tolerance=0.1,tau=0.125,tv_weight=100):
 
   return U,im-U # denoised image and texture residual
 
+def translate(x, mx):
+    lo = x.min()
+    rng = x.max()-lo
+    return (x-lo)*mx/rng
 
 """img = Image.open("evaluation/Set5/hr/bird.png")
 img_rgb = img

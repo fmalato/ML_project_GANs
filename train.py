@@ -41,6 +41,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
             disc.float()
             disc.cuda()
             optim_d = optim.Adam(disc.parameters(), lr=1e-4)
+            PCM = np.zeros((3, 128, 128))
+            PCM[0].fill(0.47614917)
+            PCM[1].fill(0.45001204)
+            PCM[2].fill(0.40904046)
+            PCM = torch.from_numpy(PCM).view((1, 3, 128, 128))
             lossA = True
         elif el == 'T':
             criterions.append(LossT)
@@ -72,10 +77,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                     if LossT in criterions:
                         loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float().to(device),
                                                                         targets.float().to(device), bicub.float().to(device),
-                                                                        optim_d, True)
+                                                                        optim_d, PCM.float().to(device), True)
                     else:
                         loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float().to(device),
-                                                                        targets.float().to(device), bicub.float().to(device), optim_d, False)
+                                                                        targets.float().to(device), bicub.float().to(device),
+                                                                        optim_d, PCM.float().to(device), False)
                     loss += loss_g
 
                 elif criterion == LossT:
