@@ -66,17 +66,20 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
             for criterion in criterions:
                 if criterion == LossP:
-                    loss += criterion(vgg, device, output.float(), targets.float())
+                    loss += criterion(vgg, device, output.float().to(device), targets.float().to(device))
 
                 elif criterion == LossA:
                     if LossT in criterions:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float(), targets.float(), bicub.float(), optim_d, True)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float().to(device),
+                                                                        targets.float().to(device), bicub.float().to(device),
+                                                                        optim_d, True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float(), targets.float(), bicub.float(), optim_d, False)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float().to(device),
+                                                                        targets.float().to(device), bicub.float().to(device), optim_d, False)
                     loss += loss_g
 
                 elif criterion == LossT:
-                    loss += criterion(vgg_T, device, output.float(), targets.float())
+                    loss += criterion(vgg_T, device, output.float().to(device), targets.float().to(device))
 
                 else:
                     loss += criterion(device, output.float().to(device), targets.float().to(device))
