@@ -52,7 +52,7 @@ def test_single(net, image_folder, image_name, criterion):
     target = target.view((1, 3, 256, 256))
     #img.show()
     inp = tens(img)
-    bicub_res = torch.from_numpy(np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS)) / 255).view((1, 3, 256, 256))
+    bicub_res = torch.from_numpy(np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.BICUBIC)) / 255).view((1, 3, 256, 256))
 
     inp = inp.view((1, 3, 64, 64))
     output = net(inp, bicub_res)
@@ -61,36 +61,19 @@ def test_single(net, image_folder, image_name, criterion):
     o = o.data.numpy()
     o = np.swapaxes(o, 0, 1)
     o = np.swapaxes(o, 1, 2)
-    #o = o.reshape((256, 256, 3))
     o = o * 255
     o = toimg(o.astype(np.uint8))
-    if image_name == "baby.png":
-        o.show()
-    bicub_res = np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS))
-    # TODO: check those artifacts
-    result = o + bicub_res
-    if image_name == "baby.png":
-        with open('result.txt', 'a+') as f:
-            f.write(str(result))
-    result = Image.fromarray(result.astype(np.uint8))
-    if image_name == "baby.png":
-        result.show()
-    #output = torch.add(output, bicub_res).clamp(0, 255)
+    bicub_res = np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.BICUBIC)).astype(np.uint8)
+    out = np.asarray(o).astype(np.uint8)
+    c = 255 - out  # a temp uint8 array here
+    np.putmask(bicub_res, c < bicub_res, c)  # a temp bool array here
+    result = out + bicub_res
+    result = Image.fromarray(result)
+    result.show()
 
     # PSNR:
     score = psnr(output.detach().numpy() / 255, np.array(target) / 255)
-    # PSNR from review
-    #psnr = 10 * math.log10((255**2) / loss.item())
 
-    # PSNR from tensorflow source code
-    #psnr = 20 * math.log(255) / math.log(10.0) - np.float32(10 / np.log(10)) * math.log(loss)
-
-    if image_name == 'baby.png':
-        out = output.view((3, 256, 256))
-        out = torch.mul(out, 255)
-        output_img = toimg(out.detach().numpy().reshape((256, 256, 3)).astype(np.uint8))
-        #output_img = Image.fromarray(output_img.astype(np.uint8))
-        #output_img.show()
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % score)
     return score
 
@@ -99,7 +82,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_2e_E']
+    tests = ['state_2e_E', 'state_3e_P']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
