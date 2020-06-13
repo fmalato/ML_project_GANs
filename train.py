@@ -25,6 +25,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
     losses_d = []
     criterions = []
     D_x = D_G_z1 = D_G_z2 = 0.0
+    PCM = np.zeros((3, 128, 128))
+    PCM[0].fill(0.47614917)
+    PCM[1].fill(0.45001204)
+    PCM[2].fill(0.40904046)
+    PCM = torch.from_numpy(PCM).view((1, 3, 128, 128))
     if load_weights:
         print('Loading {x}'.format(x=state_dict))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=state_dict), map_location=torch.device('cpu')))
@@ -41,11 +46,6 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
             disc.float()
             disc.cuda()
             optim_d = optim.Adam(disc.parameters(), lr=1e-4)
-            PCM = np.zeros((3, 128, 128))
-            PCM[0].fill(0.47614917)
-            PCM[1].fill(0.45001204)
-            PCM[2].fill(0.40904046)
-            PCM = torch.from_numpy(PCM).view((1, 3, 128, 128))
             lossA = True
         elif el == 'T':
             criterions.append(LossT)
@@ -135,10 +135,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
 
 if __name__ == '__main__':
-    batch_size = 16
-    epochs = 2
+    batch_size = 24
+    epochs = 3
     lr = 1e-4
-    loss_type = ['P', 'A']
+    loss_type = ['E']
     load_weights = False
     state_dict = 'state_1e_E'
     net = FCNN(input_channels=3, batch_size=batch_size)
