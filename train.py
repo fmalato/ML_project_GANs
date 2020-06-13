@@ -136,10 +136,10 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
 if __name__ == '__main__':
     batch_size = 16
-    epochs = 1
+    epochs = 2
     lr = 1e-4
-    loss_type = ['E']
-    load_weights = True
+    loss_type = ['P', 'A']
+    load_weights = False
     state_dict = 'state_1e_E'
     net = FCNN(input_channels=3, batch_size=batch_size)
     net.float()
