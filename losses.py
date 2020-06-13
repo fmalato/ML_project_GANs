@@ -53,7 +53,7 @@ def LossA(generator, discriminator, device, image, target, bicub, optim_d, PCM, 
 
     # Discriminator false
     output_g = generator(image.float(), bicub.float())
-    output_d = discriminator(torch.add(output_g.detach(), PCM).clamp(0, 255)).view(-1)
+    output_d = discriminator(torch.add(torch.add(output_g.detach(), PCM), bicub).clamp(0, 255)).view(-1)
     label.fill_(random.uniform(0.0, 0.1))
     loss_d_fake = criterion(output_d.float(), label.float()).cuda()
     D_G_z1 = output_d.mean().item()
