@@ -1,18 +1,15 @@
 import numpy as np
 import time
-import os, re
-import random
+import re
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import torchvision.transforms as transforms
 
 from torch import Tensor
 from torch.utils.data import DataLoader
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
-from utils import init_weights, square_patch
+from utils import init_weights
 from losses import LossE, LossP, LossA, LossT
 
 
@@ -75,13 +72,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
 
                 elif criterion == LossA:
                     if LossT in criterions:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float().to(device),
-                                                                        targets.float().to(device), bicub.float().to(device),
-                                                                        optim_d, PCM.float().to(device), True)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(disc, device, output.float().to(device),
+                                                                        targets.float().to(device), optim_d, True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(net, disc, device, images.float().to(device),
-                                                                        targets.float().to(device), bicub.float().to(device),
-                                                                        optim_d, PCM.float().to(device), False)
+                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(disc, device, output.float().to(device),
+                                                                        targets.float().to(device), optim_d, False)
                     loss += loss_g
 
                 elif criterion == LossT:

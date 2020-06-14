@@ -48,4 +48,4 @@ class COCO(Dataset):
 
     def __len__(self):  # return count of sample we have
 
-        return len(os.listdir(self.image_paths))
+        return len(self.train_imgs)

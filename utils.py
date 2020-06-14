@@ -1,5 +1,5 @@
 import random
-import os, re
+import os
 import torch
 
 import torch.nn as nn
@@ -129,8 +129,6 @@ def gram_matrix(input):
 
     G = torch.mm(features, features.t())  # compute the gram product
 
-    # we 'normalize' the values of the gram matrix
-    # by dividing by the number of element in each feature maps.
     return G
 
 def custom_bicubic(input_tensor, transf_to_tensor, transf_to_img, scale_factor=4):

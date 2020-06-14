@@ -25,12 +25,7 @@ def luminance(img):
 
     return Image.fromarray((lum_img * 255).astype(np.uint8), 'L')
 
-def psnr(lr_path, hr_path):
-    #lr = io.imread(lr_path).astype(np.float32) / 255
-    #hr = io.imread(hr_path).astype(np.float32) / 255
-
-    lr = lr_path
-    hr = hr_path
+def psnr(lr, hr):
 
     m, n, c = lr.shape[0], hr.shape[1], hr.shape[2]
     mse = np.sum((lr - hr) ** 2) / (m * n * c)
@@ -70,14 +65,12 @@ def test_single(net, image_folder, image_name, criterion):
     # PSNR:
     score = psnr(result / 255, np.array(target) / 255)
     result = Image.fromarray(result)
-    result.show()
+    if image_name == "bird.png":
+        result.show()
 
-    # PSNR from tensorflow source code
-    #psnr = 20 * math.log(255) / math.log(10.0) - np.float32(10 / np.log(10)) * math.log(loss)
-
-    if image_name == 'bird.png':
+    """if image_name == 'bird.png':
         output_img = toimg(output.detach().numpy().reshape((256, 256, 3)).astype(np.uint8) * 255)
-        output_img.show()
+        output_img.show()"""
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % score)
     return score
 
@@ -86,7 +79,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_2e_PA']
+    tests = ['state_1e_E', 'state_3e_P', 'state_2e_PA', 'state_2e_EA']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
