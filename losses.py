@@ -42,7 +42,8 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
         criterion = nn.BCELoss(weight=torch.full((batch_size,), 1, device=device))
     # Discriminator true
     optim_d.zero_grad()
-    label = torch.full((batch_size,), random.uniform(0.9, 1.0), device=device).cuda()
+    random_real = random.uniform(0.9, 1.0)
+    label = torch.full((batch_size,), random_real, device=device).cuda()
     output_d = discriminator(disc_train_real.float()).view(-1)
     loss_d_real = criterion(output_d.float(), label.float()).cuda()
     D_x = output_d.mean().item()
@@ -50,7 +51,8 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
 
     # Discriminator false
     output_d = discriminator(image.detach().float()).view(-1)
-    label.fill_(random.uniform(0.0, 0.1))
+    random_fake = random.uniform(0.0, 0.1)
+    label.fill_(random_fake)
     loss_d_fake = criterion(output_d.float(), label.float()).cuda()
     D_G_z1 = output_d.mean().item()
     loss_d = loss_d_real + loss_d_fake
@@ -59,7 +61,7 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
     optim_d.step()
 
     # Generator
-    label.fill_(random.uniform(0.9, 1.0))
+    label.fill_(random_real)
     output_d = discriminator(image.detach().float()).view(-1)
     loss_g = criterion(output_d.float(), label.float()).cuda()
     D_G_z2 = output_d.mean().item()

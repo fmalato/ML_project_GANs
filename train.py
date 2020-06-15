@@ -63,7 +63,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
             bicub = bicub.view((-1, bicub.shape[2], bicub.shape[3], bicub.shape[4]))
 
             loss = Tensor(np.zeros(1)).cuda()
-            output = net(images.float().to(device), bicub.float().to(device))
+            output = net(images.float().to(device))
             output = torch.add(torch.add(output.to(device), PCM.to(device)), bicub.to(device))
 
             for criterion in criterions:

@@ -46,10 +46,9 @@ def test_single(net, image_folder, image_name, criterion):
     target = np.array(target)
     #img.show()
     inp = tens(img)
-    bicub_res = torch.from_numpy(np.asarray(img.resize((img.size[0] * 4, img.size[1] * 4), Image.ANTIALIAS)) / 255).view((1, 3, 256, 256))
 
     inp = inp.view((1, 3, 64, 64))
-    output = net(inp, bicub_res)
+    output = net(inp)
     output = torch.add(output, torch.from_numpy(PER_CHANNEL_MEANS).view((1, 3, 256, 256))).clamp(0, 255)
     o = output.view((3, 256, 256))
     o = o.data.numpy()
@@ -79,7 +78,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_1e_E', 'state_3e_P', 'state_2e_PA', 'state_2e_EA']
+    tests = ['state_3e_E', 'state_3e_EA']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))

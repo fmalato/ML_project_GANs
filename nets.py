@@ -78,7 +78,7 @@ class FCNN(nn.Module):
             ('batch1', nn.BatchNorm2d(3))
         ]))
 
-    def forward(self, x, bicub_residual):
+    def forward(self, x):
         y = self.conv1(x)
         y = self.residual(y)
         y = self.upsamp1(y)
