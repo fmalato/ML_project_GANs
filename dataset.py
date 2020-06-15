@@ -29,7 +29,7 @@ class COCO(Dataset):
                                     Image.open(self.target_paths + os.listdir(self.target_paths)[index]),
                                     image_max_range=32,
                                     target_scale=4)"""
-        image = square_patch(self.image_paths + self.train_imgs[index], self.patch_size)
+        """image = square_patch(self.image_paths + self.train_imgs[index], self.patch_size)
         target = square_patch(self.target_paths + self.target_imgs[index], self.patch_size * self.scale_factor)
         patches = []
         patches_target = []
@@ -45,7 +45,16 @@ class COCO(Dataset):
                                                 ).view((1, 3, self.upsample_size, self.upsample_size)))
         bicubic_res = torch.cat(bicubic_res, dim=0)
 
-        return patches, patches_target, bicubic_res
+        return patches, patches_target, bicubic_res"""
+        image = Image.open(self.image_paths + self.train_imgs[index])
+        target = Image.open(self.target_paths + self.target_imgs[index])
+        bicub = image.resize((self.upsample_size, self.upsample_size), Image.BICUBIC)
+
+        image = torch.from_numpy(np.array(image, dtype=np.float64) / 255).view((1, 3, self.patch_size, self.patch_size))
+        target = torch.from_numpy(np.array(target, dtype=np.float64) / 255).view((1, 3, self.patch_size * self.scale_factor, self.patch_size * self.scale_factor))
+        bicub = torch.from_numpy(np.array(bicub, dtype=np.float64) / 255).view((1, 3, self.patch_size * self.scale_factor, self.patch_size * self.scale_factor))
+
+        return image, target, bicub
 
     def __len__(self):  # return count of sample we have
 

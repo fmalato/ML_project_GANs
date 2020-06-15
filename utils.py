@@ -28,18 +28,23 @@ def random_crop(image, target, image_max_range=32, target_scale=4):
 
 def generate_dataset(src, dst, scale=4):
     imgs = os.listdir(src)
-    if not os.path.exists(dst + '/lr/'):
-        os.mkdir(dst + '/lr/')
-    if not os.path.exists(dst + '/hr/'):
-        os.mkdir(dst + '/hr/')
+    if not os.path.exists(dst + '/target/'):
+        os.mkdir(dst + '/target/')
+    if not os.path.exists(dst + '/train/'):
+        os.mkdir(dst + '/train/')
 
     for i in range(len(imgs)):
+        name = os.path.splitext(imgs[i])[0]
         orig = Image.open(src + '/{x}'.format(x=imgs[i]))
         img = crop_central_square(orig)
         i_hr = img.resize((256, 256), Image.ANTIALIAS)
         i_lr = img.resize((int(256 / scale), int(256 / scale)), Image.ANTIALIAS)
-        i_hr.save(dst + '/target/{x}'.format(x=imgs[i]), 'PNG')
-        i_lr.save(dst + '/train/{x}'.format(x=imgs[i]), 'PNG')
+        patches_hr = img_square_patch(i_hr, size=128)
+        patches_lr = img_square_patch(i_lr, size=32)
+        for j in range(len(patches_hr)):
+            patches_hr[j].save(dst + '/target/{x}_{idx}.png'.format(x=name, idx=j), 'PNG')
+        for j in range(len(patches_lr)):
+            patches_lr[j].save(dst + '/train/{x}_{idx}.png'.format(x=name, idx=j), 'PNG')
         if i % 100 == 0:
             print('Processed: %d / %d' % (i, len(imgs)))
 
@@ -94,6 +99,16 @@ def loadimg(fn, scale=4):
 
 def square_patch(img_path, size=32):
     img = Image.open(img_path)
+    patches = []
+    scale = int(img.size[0] / size)
+    # Quadratic time, but since it will be used to scale 64x64 images to 32x32 patches, it's viable.
+    for i in range(scale):
+        for j in range(scale):
+            patches.append(img.crop((i * size, j * size, (i + 1) * size, (j + 1) * size)))
+    return patches
+
+
+def img_square_patch(img, size=32):
     patches = []
     scale = int(img.size[0] / size)
     # Quadratic time, but since it will be used to scale 64x64 images to 32x32 patches, it's viable.
@@ -190,3 +205,4 @@ def translate(x, mx):
     lo = x.min()
     rng = x.max()-lo
     return (x-lo)*mx/rng
+
