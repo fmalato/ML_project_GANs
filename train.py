@@ -6,6 +6,7 @@ import torch.optim as optim
 
 from torch import Tensor
 from torch.utils.data import DataLoader
+from datetime import date
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
@@ -118,10 +119,19 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
         print('Epoch %d ended, elapsed time: %f seconds.' % (e+1, round((end - start), 2)))
 
     print('Saving checkpoint.')
+    today = date.today()
+    t = time.localtime()
+    current_time = time.strftime("%H:%M:%S", t)
     if load_weights:
-        torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e+starting_epoch+1, mode=''.join(loss_type)))
+        torch.save(net.state_dict(), 'state_{d}e_{mode}_{date}_{time}.pth'.format(d=e + starting_epoch + 1,
+                                                                                  mode=''.join(loss_type),
+                                                                                  date=today.strftime("%b-%d-%Y"),
+                                                                                  time=current_time))
     else:
-        torch.save(net.state_dict(), 'state_{d}e_{mode}.pth'.format(d=e+1, mode=''.join(loss_type)))
+        torch.save(net.state_dict(), 'state_{d}e_{mode}_{date}_{time}.pth'.format(d=e + 1,
+                                                                                  mode=''.join(loss_type),
+                                                                                  date=today.strftime("%b-%d-%Y"),
+                                                                                  time=current_time))
 
 
 if __name__ == '__main__':
@@ -143,7 +153,12 @@ if __name__ == '__main__':
                        load_weights=load_weights, state_dict=state_dict)
     except KeyboardInterrupt:
         print('Training interrupted. Saving model.')
-        torch.save(net.state_dict(), 'state_int_{x}e_{mode}.pth'.format(x=epochs, mode=''.join(loss_type)))
+        today = date.today()
+        t = time.localtime()
+        current_time = time.strftime("%H:%M:%S", t)
+        torch.save(net.state_dict(), 'state_interrupt_{mode}_{date}_{time}.pth'.format(mode=''.join(loss_type),
+                                                                                       date=today.strftime("%b-%d-%Y"),
+                                                                                       time=current_time))
 
 
 

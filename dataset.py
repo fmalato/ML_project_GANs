@@ -35,14 +35,14 @@ class COCO(Dataset):
         patches_target = []
         bicubic_res = []
         for el in image:
-            patches.append(torch.from_numpy((np.asarray(el, dtype=np.float64) / 255) - self.PER_CHANNEL_MEANS).view((1, 3, self.patch_size, self.patch_size)))
+            patches.append(torch.from_numpy((np.asarray(el, dtype=np.float64) / 255)).view((1, 3, self.patch_size, self.patch_size)))
         patches = torch.cat(patches, dim=0)
         for el in target:
             patches_target.append(torch.from_numpy(np.asarray(el, dtype=np.float64) / 255).view((1, 3, self.upsample_size, self.upsample_size)))
         patches_target = torch.cat(patches_target, dim=0)
         for el in image:
-            bicubic_res.append(torch.from_numpy((np.asarray(el.resize((self.upsample_size, self.upsample_size), Image.BICUBIC), dtype=np.float64) / 255)
-                                                + self.PER_CHANNEL_MEANS).view((1, 3, self.upsample_size, self.upsample_size)))
+            bicubic_res.append(torch.from_numpy(np.asarray(el.resize((self.upsample_size, self.upsample_size), Image.BICUBIC), dtype=np.float64) / 255
+                                                ).view((1, 3, self.upsample_size, self.upsample_size)))
         bicubic_res = torch.cat(bicubic_res, dim=0)
 
         return patches, patches_target, bicubic_res
