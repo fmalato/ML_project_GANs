@@ -23,6 +23,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
     losses_d = []
     criterions = []
     D_x = D_G_z1 = D_G_z2 = 0.0
+    num_imgs = len(data_loader)
     PCM = np.zeros((3, 128, 128))
     PCM[0].fill(0.47614917)
     PCM[1].fill(0.45001204)
@@ -97,14 +98,14 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             if i % 100 == 0 and i is not 0:
                 end_step = time.perf_counter()
                 print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f  D(x): %f  D(G(z)): %f / %f' % (e+1, epochs,
-                                                                                                         i, len(data_loader),
+                                                                                                         i, num_imgs,
                                                                                                          sum(losses) / 100,
                                                                                                          sum(losses_d) / 100 if lossA else 0.0,
                                                                                                          D_x,
                                                                                                          D_G_z1,
                                                                                                          D_G_z2))
                 epoch_times.append(end_step - start_step)
-                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (int(232013 / batch_size) - i) / 100, 3600)
+                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (int(num_imgs / batch_size) - i) / 100, 3600)
                 minutes, seconds = divmod(rem, 60)
                 print('Time for the last step: {:05.2f} s    Epoch ETA: {:0>2}:{:0>2}:{:0>2}'.format(
                     end_step - start_step,
@@ -135,7 +136,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
 
 if __name__ == '__main__':
-    batch_size = 24
+    batch_size = 4
     epochs = 3
     lr = 1e-4
     loss_type = ['P', 'A']
@@ -149,7 +150,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     try:
-        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
+        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size*4,
                        load_weights=load_weights, state_dict=state_dict)
     except KeyboardInterrupt:
         print('Training interrupted. Saving model.')
