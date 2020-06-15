@@ -182,7 +182,7 @@ def denoise(im,U_init,tolerance=0.1,tau=0.125,tv_weight=100):
     U = im + tv_weight*DivP # update of the primal variable
 
     # update of error
-    error = np.linalg.norm(U-Uold)/np.sqrt(n*m);
+    error = np.linalg.norm(U-Uold)/np.sqrt(n*m)
 
   return U,im-U # denoised image and texture residual
 
@@ -190,20 +190,3 @@ def translate(x, mx):
     lo = x.min()
     rng = x.max()-lo
     return (x-lo)*mx/rng
-
-"""img = Image.open("evaluation/Set5/hr/bird.png")
-img_rgb = img
-img = img.convert('L')
-bic = Image.open("evaluation/Set5/lr/bird.png")
-bic = bic.resize((bic.size[0] * 4, bic.size[1] * 4), Image.BICUBIC)
-bic_rgb = bic
-bic = bic.convert('L')
-
-_, res = denoise(img, bic)
-res = Image.fromarray(res)
-res = res.convert('RGB')
-target = np.asarray(bic_rgb) + np.asarray(res)
-target = Image.fromarray(np.clip(target, a_min=0, a_max=255))
-res.show()
-bic.show()
-target.show()"""

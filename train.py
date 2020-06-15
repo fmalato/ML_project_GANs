@@ -13,7 +13,7 @@ from utils import init_weights
 from losses import LossE, LossP, LossA, LossT
 
 
-def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, intermediate_step=False, load_weights=False, state_dict=''):
+def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load_weights=False, state_dict=''):
     net.train()
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -114,11 +114,6 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, inte
                 losses_d = []
                 start_step = time.perf_counter()
 
-            if intermediate_step:
-                if i % 10000 == 0:
-                    print('Saving intermediate checkpoint.')
-                    torch.save(net.state_dict(), 'state_{d}e_{x}s_PA.pth')
-
         end = time.perf_counter()
         print('Epoch %d ended, elapsed time: %f seconds.' % (e+1, round((end - start), 2)))
 
@@ -133,7 +128,7 @@ if __name__ == '__main__':
     batch_size = 24
     epochs = 3
     lr = 1e-4
-    loss_type = ['E']
+    loss_type = ['P', 'A']
     load_weights = False
     state_dict = 'state_1e_E'
     net = FCNN(input_channels=3, batch_size=batch_size)
@@ -145,7 +140,7 @@ if __name__ == '__main__':
 
     try:
         multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size,
-                       intermediate_step=False, load_weights=load_weights, state_dict=state_dict)
+                       load_weights=load_weights, state_dict=state_dict)
     except KeyboardInterrupt:
         print('Training interrupted. Saving model.')
         torch.save(net.state_dict(), 'state_int_{x}e_{mode}.pth'.format(x=epochs, mode=''.join(loss_type)))

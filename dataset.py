@@ -22,8 +22,9 @@ class COCO(Dataset):
         self.train_imgs = os.listdir(self.image_paths)
         self.target_imgs = os.listdir(self.target_paths)
 
+        PngImagePlugin.MAX_TEXT_CHUNK = 1000 * (1024 ** 2)
+
     def __getitem__(self, index):
-        PngImagePlugin.MAX_TEXT_CHUNK = 1000*(1024**2)
         """image, target = random_crop(Image.open(self.image_paths + os.listdir(self.image_paths)[index]),
                                     Image.open(self.target_paths + os.listdir(self.target_paths)[index]),
                                     image_max_range=32,
@@ -40,8 +41,7 @@ class COCO(Dataset):
             patches_target.append(torch.from_numpy(np.asarray(el, dtype=np.float64) / 255).view((1, 3, self.upsample_size, self.upsample_size)))
         patches_target = torch.cat(patches_target, dim=0)
         for el in image:
-            bicubic_res.append(torch.from_numpy((np.asarray(el.resize((self.upsample_size, self.upsample_size), Image.BICUBIC), dtype=np.float64) / 255)
-                                               + self.PER_CHANNEL_MEANS).view((1, 3, self.upsample_size, self.upsample_size)))
+            bicubic_res.append(torch.from_numpy((np.asarray(el.resize((self.upsample_size, self.upsample_size), Image.BICUBIC), dtype=np.float64) / 255)).view((1, 3, self.upsample_size, self.upsample_size)))
         bicubic_res = torch.cat(bicubic_res, dim=0)
 
         return patches, patches_target, bicubic_res

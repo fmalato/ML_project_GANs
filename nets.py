@@ -5,8 +5,6 @@ from torch import nn
 from collections import OrderedDict
 from torchvision.models import vgg19
 
-from utils import custom_bicubic
-
 
 class ResidualBlock(nn.Module):
 
@@ -87,8 +85,6 @@ class FCNN(nn.Module):
         y = self.conv2(y)
         y = self.conv3(y)
 
-        #return (torch.add(y, custom_bicubic(x.cpu(), self.tens, self.pilimg, self.scale_factor).cuda())).clamp(0, 255)
-        #return torch.add(y, bicub_residual.cuda()).clamp(0, 255)
         return y
 
 
