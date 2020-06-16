@@ -8,7 +8,7 @@ import numpy as np
 
 from torchvision import datasets
 from math import floor
-from PIL import Image
+from PIL import Image, PngImagePlugin
 
 # Given that I have to perform the same random crop on both the image and the target, I had to redefine the function
 def random_crop(image, target, image_max_range=32, target_scale=4):
@@ -127,6 +127,7 @@ def init_weights(model):
         nn.init.constant_(model.bias.data, 0)
 
 def remove_grayscale():
+    PngImagePlugin.MAX_TEXT_CHUNK = 1000 * (1024**2)
     for el in os.listdir('data/train/'):
         img = Image.open('data/train/{x}'.format(x=el))
         if len(img.getbands()) != 3:
@@ -206,3 +207,13 @@ def translate(x, mx):
     rng = x.max()-lo
     return (x-lo)*mx/rng
 
+
+def generate_data():
+    print('Generating from train2014')
+    generate_dataset('../coco/train2014/', 'data/')
+    print('Generating from val2014')
+    generate_dataset('../coco/val2014/', 'data/')
+    print('Generating from test2014')
+    generate_dataset('../coco/test2014/', 'data/')
+    print('Removing grayscale images')
+    remove_grayscale()
