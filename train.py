@@ -11,7 +11,7 @@ from datetime import date
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
 from utils import init_weights
-from losses import LossE, LossP, LossA, LossT
+from losses import LossE, LossP, LossA, LossT, LossA_2
 
 
 def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load_weights=False, state_dict=''):
@@ -24,11 +24,6 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
     criterions = []
     D_x = D_G_z1 = D_G_z2 = 0.0
     num_imgs = len(data_loader)
-    PCM = np.zeros((3, 128, 128))
-    PCM[0].fill(0.47614917)
-    PCM[1].fill(0.45001204)
-    PCM[2].fill(0.40904046)
-    PCM = torch.from_numpy(PCM).view((1, 3, 128, 128))
     if load_weights:
         print('Loading {x}'.format(x=state_dict))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=state_dict), map_location=torch.device('cpu')))
@@ -40,7 +35,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             criterions.append(LossP)
             vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
         elif el == 'A':
-            criterions.append(LossA)
+            criterions.append(LossA_2)
             disc = Discriminator()
             disc.float()
             disc.cuda()
@@ -69,7 +64,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                 if criterion == LossP:
                     loss += criterion(vgg, device, output.float().to(device), targets.float().to(device))
 
-                elif criterion == LossA:
+                elif criterion == LossA_2:
                     if LossT in criterions:
                         loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(disc, device, output.float().to(device),
                                                                         targets.float().to(device), optim_d, True)
@@ -133,7 +128,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
 
 if __name__ == '__main__':
-    batch_size = 2
+    batch_size = 16
     epochs = 3
     lr = 1e-4
     loss_type = ['P', 'A']
