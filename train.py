@@ -16,11 +16,15 @@ from losses import LossE, LossP, LossA, LossT, LossA_2
 
 def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load_weights=False, state_dict=''):
     net.train()
+    step_update = 100
     data = COCO('data/train/', 'data/target/')
     data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
     lossA = False
     losses = []
     losses_d = []
+    losses_g = []
+    D_xs = []
+    D_gs = []
     criterions = []
     D_x = D_G_z = 0.0
     num_imgs = len(data_loader)
@@ -50,7 +54,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
     for e in range(epochs):
         start = time.perf_counter()
         start_step = start
-        print('Epoch %d.' % (e+1))
+        print('Epoch %d.' % (e + 1))
         epoch_times = []
 
         for i, (images, targets, bicub) in enumerate(data_loader):
@@ -66,11 +70,13 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
                 elif criterion == LossA_2:
                     if 'T' in loss_type:
-                        loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.to(device).float(), targets.to(device).float(), optim_d,
-                                                   True)
+                        loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.to(device).float(),
+                                                               targets.to(device).float(), optim_d,
+                                                               True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.to(device).float(), targets.to(device).float(), optim_d,
-                                                   False)
+                        loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.to(device).float(),
+                                                               targets.to(device).float(), optim_d,
+                                                               False)
                     loss += loss_g
 
                 elif criterion == LossT:
@@ -86,16 +92,19 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
             if lossA:
                 losses_d.append(loss_d.detach().cuda().item())
+                losses_g.append(loss_g.detach().cuda().item())
+                D_xs.append(D_x)
+                D_gs.append(D_G_z)
 
-            if i % 100 == 0 and i is not 0:
+            if i % step_update == 0 and i is not 0:
                 end_step = time.perf_counter()
                 print('Epoch %d/%d - Step: %d/%d  Loss G: %f (%f) Loss D: %f  D(x): %f  D(G(z)): %f' % (e + 1, epochs,
-                                                                                                        i + 1, len(data_loader),
-                                                                                                        sum(losses) / 100,
-                                                                                                        loss_g if lossA else 0.0,
-                                                                                                        sum(losses_d) / 100 if lossA else 0.0,
-                                                                                                        D_x,
-                                                                                                        D_G_z))
+                                                                                                        i, len(data_loader),
+                                                                                                        sum(losses) / step_update,
+                                                                                                        sum(losses_g) / step_update if lossA else 0.0,
+                                                                                                        sum(losses_d) / step_update if lossA else 0.0,
+                                                                                                        sum(D_xs) / step_update if lossA else 0.0,
+                                                                                                        sum(D_gs) / step_update if lossA else 0.0))
                 epoch_times.append(end_step - start_step)
                 hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (num_imgs - i) / 100, 3600)
                 minutes, seconds = divmod(rem, 60)
@@ -106,10 +115,13 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                     int(seconds)))
                 losses = []
                 losses_d = []
+                losses_g = []
+                D_xs = []
+                D_gs = []
                 start_step = time.perf_counter()
 
         end = time.perf_counter()
-        print('Epoch %d ended, elapsed time: %f seconds.' % (e+1, round((end - start), 2)))
+        print('Epoch %d ended, elapsed time: %f seconds.' % (e + 1, round((end - start), 2)))
 
     print('Saving checkpoint.')
     today = date.today()
@@ -128,7 +140,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
 
 if __name__ == '__main__':
-    batch_size = 16
+    batch_size = 8
     epochs = 3
     lr = 1e-4
     loss_type = ['P', 'A']
@@ -142,7 +154,8 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     try:
-        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs, batch_size=batch_size*4,
+        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs,
+                       batch_size=batch_size * 4,
                        load_weights=load_weights, state_dict=state_dict)
     except KeyboardInterrupt:
         print('Training interrupted. Saving model.')
@@ -152,8 +165,3 @@ if __name__ == '__main__':
         torch.save(net.state_dict(), 'state_interrupt_{mode}_{date}_{time}.pth'.format(mode=''.join(loss_type),
                                                                                        date=today.strftime("%b-%d-%Y"),
                                                                                        time=current_time))
-
-
-
-
-

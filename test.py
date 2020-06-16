@@ -32,7 +32,7 @@ def psnr(lr, hr):
 
     return 10 * math.log10(1 / mse)
 
-def test_single(net, image_folder, image_name, criterion):
+def test_single(net, image_folder, image_name, model_name):
     net.eval()
     PER_CHANNEL_MEANS = np.zeros((3, 256, 256))
     PER_CHANNEL_MEANS[0].fill(0.47614917)
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_interrupt_PA_Jun']
+    tests = ['state_3e_E', 'state_3e_P', 'state_1e_PA']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         for image_name in os.listdir('evaluation/Set5/lr'):
             img = Image.open('evaluation/Set5/lr/{x}'.format(x=image_name))
             target = Image.open('evaluation/Set5/hr/{x}'.format(x=image_name))
-            avg_psnr += test_single(net, 'evaluation/Set5/', image_name, criterion=nn.MSELoss())
+            avg_psnr += test_single(net, 'evaluation/Set5/', image_name, el)
         avg_psnr = avg_psnr / len(os.listdir('evaluation/Set5/lr'))
         print('Average psnr score is: %f' % avg_psnr)
     img = Image.open('evaluation/Set5/lr/baby.png')
