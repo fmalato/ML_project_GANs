@@ -42,9 +42,9 @@ def generate_dataset(src, dst, scale=4):
         patches_hr = img_square_patch(i_hr, size=128)
         patches_lr = img_square_patch(i_lr, size=32)
         for j in range(len(patches_hr)):
-            patches_hr[j].save(dst + '/target/{x}_{idx}.png'.format(x=name, idx=j), 'PNG')
+            patches_hr[j].save(dst + '/target/{x}_{idx}.jpg'.format(x=name, idx=j))
         for j in range(len(patches_lr)):
-            patches_lr[j].save(dst + '/train/{x}_{idx}.png'.format(x=name, idx=j), 'PNG')
+            patches_lr[j].save(dst + '/train/{x}_{idx}.jpg'.format(x=name, idx=j))
         if i % 100 == 0:
             print('Processed: %d / %d' % (i, len(imgs)))
 
@@ -205,4 +205,3 @@ def translate(x, mx):
     lo = x.min()
     rng = x.max()-lo
     return (x-lo)*mx/rng
-
