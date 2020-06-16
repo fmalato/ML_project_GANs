@@ -102,7 +102,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                                                                                                          D_G_z1,
                                                                                                          D_G_z2))
                 epoch_times.append(end_step - start_step)
-                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (int(num_imgs / batch_size) - i) / 100, 3600)
+                hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (num_imgs - i) / 100, 3600)
                 minutes, seconds = divmod(rem, 60)
                 print('Time for the last step: {:05.2f} s    Epoch ETA: {:0>2}:{:0>2}:{:0>2}'.format(
                     end_step - start_step,
