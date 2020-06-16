@@ -78,13 +78,16 @@ def LossA_2(discriminator, device, output_g, target, optim_d, lossT=False):
 
     # Generator
     output_d = discriminator(output_g.detach()).view(-1)
+    d_g_z = output_d.mean().item()
     loss_g = criterion(output_d.detach(), label)
     if lossT:
         loss_g *= 2
 
     # Discriminator
     optim_d.zero_grad()
-    train = torch.cat((discriminator(target.detach()).view(-1), output_d)).to(device)
+    output_t = discriminator(target.detach()).view(-1)
+    d_x = output_t.mean().item()
+    train = torch.cat((output_t, output_d)).to(device)
     labels = torch.cat((label, label_f))
     idxs = list(range(0, batch_size * 2, 1))
     np.random.shuffle(idxs)
@@ -97,7 +100,7 @@ def LossA_2(discriminator, device, output_g, target, optim_d, lossT=False):
 
     optim_d.step()
 
-    return loss_g, loss_d
+    return loss_g, loss_d, d_x, d_g_z
 
 
 """ Texture Loss """
