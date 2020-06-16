@@ -70,43 +70,34 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
     return loss_g, loss_d, D_x, D_G_z1, D_G_z2
 
 
-def LossA_2(discriminator, device, image, target, optim_d, lossT=False):
-    disc_train_real = target.to(device)
-    disc_train_fake = image.detach().to(device)
-    batch_size = disc_train_real.size(0)
-    if lossT:
-        criterion = nn.BCELoss(weight=torch.full((2 * batch_size,), 2, device=device))
-        crit2 = nn.BCELoss(weight=torch.full((batch_size,), 2, device=device))
-    else:
-        criterion = nn.BCELoss(weight=torch.full((2 * batch_size,), 1, device=device))
-        crit2 = nn.BCELoss(weight=torch.full((batch_size,), 1, device=device))
-    # Discriminator
-    optim_d.zero_grad()
+def LossA_2(discriminator, device, output_g, target, optim_d, lossT=False):
+    batch_size = output_g.size(0)
+    criterion = nn.MSELoss()
     label = torch.full((batch_size,), 1.0, device=device)
     label_f = torch.full((batch_size,), 0.0, device=device)
-    train = torch.cat((disc_train_real, disc_train_fake))
+
+    # Generator
+    output_d = discriminator(output_g.detach()).view(-1)
+    loss_g = criterion(output_d.detach(), label)
+    if lossT:
+        loss_g *= 2
+
+    # Discriminator
+    optim_d.zero_grad()
+    train = torch.cat((discriminator(target.detach()).view(-1), output_d)).to(device)
     labels = torch.cat((label, label_f))
     idxs = list(range(0, batch_size * 2, 1))
     np.random.shuffle(idxs)
     train = train[idxs]
     labels = labels[idxs]
-    output_d = discriminator(train).view(-1)
-    loss_d = criterion(output_d, labels)
-    D_x = [output_d.detach().cpu().numpy()[i] for i in range(len(idxs)) if labels[i] == 1]
-    D_x = sum(D_x) / len(D_x)
-    D_G_z1 = [output_d.detach().cpu().numpy()[i] for i in range(len(idxs)) if labels[i] == 0]
-    D_G_z1 = sum(D_G_z1) / len(D_G_z1)
+    loss_d = criterion(train, labels)
+    if lossT:
+        loss_d *= 2
     loss_d.backward()
 
     optim_d.step()
 
-    # Generator
-    label.fill_(1.0)
-    output_d = discriminator(image.detach()).view(-1)
-    loss_g = crit2(output_d, label)
-    D_G_z2 = output_d.mean().item()
-
-    return loss_g, loss_d, D_x, D_G_z1, D_G_z2
+    return loss_g, loss_d
 
 
 """ Texture Loss """

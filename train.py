@@ -65,12 +65,12 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                     loss += criterion(vgg, device, output.float().to(device), targets.float().to(device))
 
                 elif criterion == LossA_2:
-                    if LossT in criterions:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(disc, device, output.float().to(device),
-                                                                        targets.float().to(device), optim_d, True)
+                    if 'T' in loss_type:
+                        loss_g, loss_d = criterion(disc, device, output.to(device).float(), targets.to(device).float(), optim_d,
+                                                   True)
                     else:
-                        loss_g, loss_d, D_x, D_G_z1, D_G_z2 = criterion(disc, device, output.float().to(device),
-                                                                        targets.float().to(device), optim_d, False)
+                        loss_g, loss_d = criterion(disc, device, output.to(device).float(), targets.to(device).float(), optim_d,
+                                                   False)
                     loss += loss_g
 
                 elif criterion == LossT:
@@ -89,13 +89,8 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
             if i % 100 == 0 and i is not 0:
                 end_step = time.perf_counter()
-                print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f  D(x): %f  D(G(z)): %f / %f' % (e+1, epochs,
-                                                                                                         i, num_imgs,
-                                                                                                         sum(losses) / 100,
-                                                                                                         sum(losses_d) / 100 if lossA else 0.0,
-                                                                                                         D_x,
-                                                                                                         D_G_z1,
-                                                                                                         D_G_z2))
+                print('Epoch %d/%d - Step: %d/%d  Loss G: %f  Loss D: %f' % (e+1, epochs, i, num_imgs, sum(losses) / 100,
+                                                                             sum(losses_d) / 100 if lossA else 0.0))
                 epoch_times.append(end_step - start_step)
                 hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (num_imgs - i) / 100, 3600)
                 minutes, seconds = divmod(rem, 60)
