@@ -25,34 +25,25 @@ class COCO(Dataset):
         PngImagePlugin.MAX_TEXT_CHUNK = 1000 * (1024 ** 2)
 
     def __getitem__(self, index):
-        """image, target = random_crop(Image.open(self.image_paths + os.listdir(self.image_paths)[index]),
-                                    Image.open(self.target_paths + os.listdir(self.target_paths)[index]),
-                                    image_max_range=32,
-                                    target_scale=4)"""
-        """image = square_patch(self.image_paths + self.train_imgs[index], self.patch_size)
-        target = square_patch(self.target_paths + self.target_imgs[index], self.patch_size * self.scale_factor)
-        patches = []
-        patches_target = []
-        bicubic_res = []
-        for el in image:
-            patches.append(torch.from_numpy((np.asarray(el, dtype=np.float64) / 255)).view((1, 3, self.patch_size, self.patch_size)))
-        patches = torch.cat(patches, dim=0)
-        for el in target:
-            patches_target.append(torch.from_numpy(np.asarray(el, dtype=np.float64) / 255).view((1, 3, self.upsample_size, self.upsample_size)))
-        patches_target = torch.cat(patches_target, dim=0)
-        for el in image:
-            bicubic_res.append(torch.from_numpy(np.asarray(el.resize((self.upsample_size, self.upsample_size), Image.BICUBIC), dtype=np.float64) / 255
-                                                ).view((1, 3, self.upsample_size, self.upsample_size)))
-        bicubic_res = torch.cat(bicubic_res, dim=0)
 
-        return patches, patches_target, bicubic_res"""
         image = Image.open(self.image_paths + self.train_imgs[index])
         target = Image.open(self.target_paths + self.target_imgs[index])
         bicub = image.resize((self.upsample_size, self.upsample_size), Image.BICUBIC)
 
-        image = torch.from_numpy(np.array(image, dtype=np.float64) / 255).view((1, 3, self.patch_size, self.patch_size))
-        target = torch.from_numpy(np.array(target, dtype=np.float64) / 255).view((1, 3, self.patch_size * self.scale_factor, self.patch_size * self.scale_factor))
-        bicub = torch.from_numpy(np.array(bicub, dtype=np.float64) / 255).view((1, 3, self.patch_size * self.scale_factor, self.patch_size * self.scale_factor))
+        image = np.array(image, dtype=np.float64) / 255
+        target = np.array(target, dtype=np.float64) / 255
+        bicub = np.array(bicub, dtype=np.float64) / 255
+
+        image = np.swapaxes(image, 2, 1)
+        target = np.swapaxes(target, 2, 1)
+        bicub = np.swapaxes(bicub, 2, 1)
+        image = np.swapaxes(image, 1, 0)
+        target = np.swapaxes(target, 1, 0)
+        bicub = np.swapaxes(bicub, 1, 0)
+
+        image = torch.from_numpy(image)
+        target = torch.from_numpy(target)
+        bicub = torch.from_numpy(bicub)
 
         return image, target, bicub
 
