@@ -92,9 +92,9 @@ def LossA_2(discriminator, device, image, target, optim_d, lossT=False):
     labels = labels[idxs]
     output_d = discriminator(train).view(-1)
     loss_d = criterion(output_d, labels)
-    D_x = [output_d.detach().numpy()[i] for i in range(len(idxs)) if labels[i] == 1]
+    D_x = [output_d.detach().cpu().numpy()[i] for i in range(len(idxs)) if labels[i] == 1]
     D_x = sum(D_x) / len(D_x)
-    D_G_z1 = [output_d.detach().numpy()[i] for i in range(len(idxs)) if labels[i] == 0]
+    D_G_z1 = [output_d.detach().cpu().numpy()[i] for i in range(len(idxs)) if labels[i] == 0]
     D_G_z1 = sum(D_G_z1) / len(D_G_z1)
     loss_d.backward()
 
