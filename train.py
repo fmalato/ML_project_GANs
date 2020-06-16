@@ -141,7 +141,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
 
 if __name__ == '__main__':
     batch_size = 8
-    epochs = 3
+    epochs = 1
     lr = 1e-4
     loss_type = ['P', 'A']
     load_weights = False

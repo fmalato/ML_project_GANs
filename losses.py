@@ -72,7 +72,7 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
 
 def LossA_2(discriminator, device, output_g, target, optim_d, lossT=False):
     batch_size = output_g.size(0)
-    criterion = nn.MSELoss()
+    criterion = nn.BCELoss()
     label = torch.full((batch_size,), 1.0, device=device)
     label_f = torch.full((batch_size,), 0.0, device=device)
 
