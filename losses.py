@@ -71,6 +71,10 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
 
 
 def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, lossT=False):
+    if last_dx < 0.8 or last_dgz > 0.2:
+        discriminator.train()
+    else:
+        discriminator.eval()
     batch_size = output_g.size(0)
     criterion = nn.BCELoss()
     label = torch.full((batch_size,), 0.9, device=device)
