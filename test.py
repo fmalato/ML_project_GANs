@@ -48,8 +48,8 @@ def test_single(net, image_folder, image_name, model_name):
     inp = tens(img)
 
     inp = inp.view((1, 3, 64, 64))
-    output = net(inp)
-    output = torch.add(output, torch.from_numpy(PER_CHANNEL_MEANS).view((1, 3, 256, 256))).clamp(0, 255)
+    output = net(inp).clamp(0, 255)
+    #output = torch.add(output, torch.from_numpy(PER_CHANNEL_MEANS).view((1, 3, 256, 256))).clamp(0, 255)
     o = output.view((3, 256, 256))
     o = o.data.numpy()
     o = np.swapaxes(o, 0, 1)
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = ['state_3e_E', 'state_3e_P', 'state_1e_PA']
+    tests = ['state_3e_E_2', 'state_3e_P', 'state_1e_PA_2']
     for el in tests:
         print('Testing {x}'.format(x=el))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=el), map_location=torch.device('cpu')))

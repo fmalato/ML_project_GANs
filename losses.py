@@ -70,7 +70,7 @@ def LossA(discriminator, device, image, target, optim_d, lossT=False):
     return loss_g, loss_d, D_x, D_G_z1, D_G_z2
 
 
-def LossA_2(discriminator, device, output_g, target, optim_d, lossT=False):
+def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, lossT=False):
     batch_size = output_g.size(0)
     criterion = nn.BCELoss()
     label = torch.full((batch_size,), 1.0, device=device)
@@ -87,18 +87,21 @@ def LossA_2(discriminator, device, output_g, target, optim_d, lossT=False):
     optim_d.zero_grad()
     output_t = discriminator(target.detach()).view(-1)
     d_x = output_t.mean().item()
-    train = torch.cat((output_t, output_d)).to(device)
-    labels = torch.cat((label, label_f))
-    idxs = list(range(0, batch_size * 2, 1))
-    np.random.shuffle(idxs)
-    train = train[idxs]
-    labels = labels[idxs]
-    loss_d = criterion(train, labels)
-    if lossT:
-        loss_d *= 2
-    loss_d.backward()
+    if last_dx < 0.8 or last_dgz > 0.2:
+        train = torch.cat((output_t, output_d)).to(device)
+        labels = torch.cat((label, label_f))
+        idxs = list(range(0, batch_size * 2, 1))
+        np.random.shuffle(idxs)
+        train = train[idxs]
+        labels = labels[idxs]
+        loss_d = criterion(train, labels)
+        if lossT:
+            loss_d *= 2
+        loss_d.backward()
 
-    optim_d.step()
+        optim_d.step()
+    else:
+        loss_d = torch.Tensor(np.zeros(1))
 
     return loss_g, loss_d, d_x, d_g_z
 
