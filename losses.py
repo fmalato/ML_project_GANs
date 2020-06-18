@@ -10,13 +10,12 @@ from utils import gram_matrix
 def LossE(device, image, target):
     criterion = nn.MSELoss().cuda()
 
-    return criterion(image, target.to(device))
+    return criterion(image, target.to(device)).cuda()
 
 
 """ Perceptual Loss """
 def LossP(vgg, device, image, target):
-    criterion = nn.MSELoss()
-    criterion.cuda()
+    criterion = nn.MSELoss().cuda()
     vgg_2 = vgg[0].float()
     vgg_5 = vgg[1].float()
     vgg_2.cuda()
@@ -29,7 +28,7 @@ def LossP(vgg, device, image, target):
     real_feat = vgg_5(target.float())
     loss_5 = criterion(extr_feat, real_feat.detach())
 
-    return (2e-1)*loss_2 + (2e-2)*loss_5
+    return ((2e-1)*loss_2 + (2e-2)*loss_5).cuda()
 
 
 """ GAN generator and discriminator Losses """
@@ -98,16 +97,16 @@ def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz,
         np.random.shuffle(idxs)
         train = train[idxs]
         labels = labels[idxs]
-        loss_d = criterion(train, labels)
+        loss_d = criterion(train, labels).to(device)
         if lossT:
             loss_d *= 2
         loss_d.backward()
 
         optim_d.step()
     else:
-        loss_d = torch.Tensor(np.zeros(1))
+        loss_d = torch.Tensor(np.zeros(1)).to(device)
 
-    return loss_g, loss_d, d_x, d_g_z
+    return loss_g.cuda(), loss_d.cuda(), d_x, d_g_z
 
 
 """ Texture Loss """
@@ -141,7 +140,7 @@ def LossT(vgg, device, image, target, patch_size=16):
     loss_2 = criterion(gram_matrix(vgg_2(patches)).float(), gram_matrix(vgg_2(patches_target.float())).float())
     loss_3 = criterion(gram_matrix(vgg_3(patches)).float(), gram_matrix(vgg_3(patches_target.float())).float())
 
-    return 3e-7 * loss_1 + 1e-6 * loss_2 + 1e-6 * loss_3
+    return (3e-7 * loss_1 + 1e-6 * loss_2 + 1e-6 * loss_3).cuda()
 
 
 
