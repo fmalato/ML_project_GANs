@@ -60,13 +60,14 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
         for i, (images, targets, bicub) in enumerate(data_loader):
             optimizer.zero_grad()
 
-            images.cuda()
-            targets.cuda()
-            bicub.cuda()
+            images.to(device)
+            targets.to(device)
+            bicub.to(device)
 
             loss = Tensor(np.zeros(1))
             output = net(images.float())
             output = torch.add(output, bicub).clamp(0, 1)
+            output.to(device)
 
             for criterion in criterions:
                 if criterion == LossP:
