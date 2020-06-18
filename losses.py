@@ -113,9 +113,9 @@ def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz,
 """ Texture Loss """
 def LossT(vgg, device, image, target, patch_size=16):
     criterion = nn.MSELoss()
-    vgg_1 = vgg[0]
-    vgg_2 = vgg[1]
-    vgg_3 = vgg[2]
+    vgg_1 = vgg[0].cuda()
+    vgg_2 = vgg[1].cuda()
+    vgg_3 = vgg[2].cuda()
     # Images
     image = torch.split(image, 1, dim=0)
     img_size = image[0].shape[2]
@@ -125,8 +125,7 @@ def LossT(vgg, device, image, target, patch_size=16):
         new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
         new = new.reshape((batch_size, 3, patch_size, patch_size))
         patches.append(new)
-    patches = torch.cat(patches)
-    patches.to(device)
+    patches = torch.cat(patches).to(device)
     # Targets
     img_size = target[0].shape[2]
     batch_size = int(img_size / patch_size) ** 2
@@ -136,8 +135,7 @@ def LossT(vgg, device, image, target, patch_size=16):
         new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
         new = new.reshape((batch_size, 3, patch_size, patch_size))
         patches_target.append(new)
-    patches_target = torch.cat(patches_target)
-    patches_target.to(device)
+    patches_target = torch.cat(patches_target).to(device)
     # Computing loss
     loss_1 = criterion(gram_matrix(vgg_1(patches)).float(), gram_matrix(vgg_1(patches_target.float())).float())
     loss_2 = criterion(gram_matrix(vgg_2(patches)).float(), gram_matrix(vgg_2(patches_target.float())).float())
