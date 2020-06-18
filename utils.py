@@ -9,6 +9,8 @@ import numpy as np
 from torchvision import datasets
 from math import floor
 from PIL import Image, PngImagePlugin
+from skimage import io
+from skimage.transform import resize
 
 # Given that I have to perform the same random crop on both the image and the target, I had to redefine the function
 def random_crop(image, target, image_max_range=32, target_scale=4):
@@ -175,3 +177,39 @@ def generate_data():
     print('Removing grayscale images')
     remove_grayscale()
 
+def img_to_pt():
+    if not os.path.exists('data_pt/'):
+        os.mkdir('data_pt/')
+        os.mkdir('data_pt/train/')
+        os.mkdir('data_pt/target/')
+        os.mkdir('data_pt/bicub/')
+    imgs = os.listdir('data/train')
+    i = 0
+    for el in imgs:
+        if i % 100 == 0:
+            print('Processed: %d/%d' % (i, len(imgs)))
+        name = os.path.splitext(el)[0]
+        image = io.imread('data/train/{x}'.format(x=el))
+        target = io.imread('data/target/{x}'.format(x=el))
+        bicub = resize(image, (128, 128), anti_aliasing=True)
+
+        image = np.array(image, dtype=np.float64) / 255
+        target = np.array(target, dtype=np.float64) / 255
+
+        image = np.swapaxes(image, 2, 1)
+        target = np.swapaxes(target, 2, 1)
+        bicub = np.swapaxes(bicub, 2, 1)
+        image = np.swapaxes(image, 1, 0)
+        target = np.swapaxes(target, 1, 0)
+        bicub = np.swapaxes(bicub, 1, 0)
+
+        image = torch.from_numpy(image)
+        target = torch.from_numpy(target)
+        bicub = torch.from_numpy(bicub)
+
+        torch.save(image, 'data_pt/train/{n}.pt'.format(n=name))
+        torch.save(target, 'data_pt/target/{n}.pt'.format(n=name))
+        torch.save(bicub, 'data_pt/bicub/{n}.pt'.format(n=name))
+        i += 1
+
+#img_to_pt()

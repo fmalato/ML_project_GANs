@@ -59,9 +59,9 @@ def test_single(net, img, target, image_name):
     np.putmask(bicub_res, c < bicub_res, c)  # a temp bool array here"""
     result = np.clip(o + bicub_res, 0., 1.)
     # PSNR:
-    score = psnr(result, np.array(target))
+    score = psnr(result, target)
     #result = Image.fromarray(result)
-    if image_name == "zebra.png":
+    if image_name == "bird.png":
         io.imshow(result)
         plt.show()
 
@@ -76,9 +76,9 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    #tests = os.listdir('trained_models/')
-    tests = ['state_3e_E_2.pth', 'state_3e_P_Jun.pth', 'state_1e_PA_Jun.pth']
-    img_path = 'evaluation/Set14/'
+    tests = os.listdir('trained_models/')
+    #tests = ['ENet-E.pth', 'ENet-P.pth', 'ENet-PA.pth']
+    img_path = 'evaluation/Set5/'
     if '.DS_Store' in tests:
         os.remove('trained_models/.DS_Store')
         tests.remove('.DS_Store')
