@@ -1,31 +1,15 @@
 import torch
 import torchvision.transforms as transforms
-import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import os
 import math
 import matplotlib.pyplot as plt
 
-from torch import FloatTensor
-from PIL import Image
 from skimage import io
-from skimage.transform import rescale, resize, downscale_local_mean
+from skimage.transform import resize, downscale_local_mean
 
 from FCNN_CPU import FCNN
-from utils import crop_central_square, custom_bicubic, translate
-from losses import LossE, LossP, LossA, LossT
 
-
-def luminance(img):
-    lum_img = np.zeros((img.size[0], img.size[1]), dtype=np.uint8)
-    for i in range(img.size[0]):
-        for j in range(img.size[1]):
-            pixelRGB = img.getpixel((i, j))
-            R, G, B = pixelRGB
-            lum_img[j][i] = math.sqrt(0.47614917*(R**2) + 0.45001204*(G**2) + 0.40904046*(B**2))
-
-    return Image.fromarray((lum_img * 255).astype(np.uint8), 'L')
 
 def psnr(lr, hr):
 
@@ -37,14 +21,10 @@ def psnr(lr, hr):
 def test_single(net, img, target, image_name, model_name):
     net.eval()
     tens = transforms.ToTensor()
-    toimg = transforms.ToPILImage()
-
-    target = np.array(target)
-    #img.show()
     inp = tens(img).float()
 
     inp = inp.view((1, 3, 56, 56))
-    output = net(inp).clamp(0, 255)
+    output = net(inp)
 
     o = output.view((3, 224, 224))
     o = o.data.numpy()
@@ -53,14 +33,22 @@ def test_single(net, img, target, image_name, model_name):
 
     bicub_res = resize(img, (224, 224), anti_aliasing=True)
 
-    result = np.clip(o + bicub_res, 0., 1.)
-    # PSNR:
+    result = np.clip(o + bicub_res +0.05, 0., 1.)
+    # PSNR
     score = psnr(result, target)
     if image_name == "bird.png":
         fig, ax1 = plt.subplots(1, 1)
         ax1.imshow(result)
         ax1.set_title(model_name)
         plt.show()
+        """fig, ax2 = plt.subplots(1, 1)
+        ax2.imshow(img)
+        ax2.set_title(model_name)
+        plt.show()
+        fig, ax3 = plt.subplots(1, 1)
+        ax3.imshow(target)
+        ax3.set_title(model_name)
+        plt.show()"""
 
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % score)
     return score
@@ -70,8 +58,8 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    tests = os.listdir('trained_models/')
-    #tests = ['ENet-E.pth', 'ENet-P.pth', 'ENet-PA.pth']
+    #tests = os.listdir('trained_models/')
+    tests = ['state_1e_PA_Jun.pth', 'state_1e_PAT.pth']
     img_path = 'evaluation/Set5/'
     if '.DS_Store' in tests:
         os.remove('trained_models/.DS_Store')
