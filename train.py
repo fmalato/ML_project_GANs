@@ -82,7 +82,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
                                                                targets.float(), optim_d, D_x, D_G_z,
                                                                False)
-                    loss += loss_g
+                    loss += loss_g.mean().item()
 
                 elif criterion == LossT:
                     loss += criterion(vgg_T, device, output.float(), targets.float())
@@ -96,8 +96,8 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             optimizer.step()
 
             if lossA:
-                losses_d.append(loss_d.detach().item())
-                losses_g.append(loss_g.detach().item())
+                losses_d.append(loss_d.detach().mean().item())
+                losses_g.append(loss_g.detach().mean().item())
                 D_xs.append(D_x)
                 D_gs.append(D_G_z)
 
