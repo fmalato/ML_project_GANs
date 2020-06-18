@@ -73,7 +73,7 @@ class FCNN(nn.Module):
         ]))
         self.conv3 = nn.Sequential(OrderedDict([
             ('c3', nn.Conv2d(64, 3, kernel_size=(3, 3), padding=(1, 1))),
-            ('batch1', nn.BatchNorm2d(3))
+            #('batch1', nn.BatchNorm2d(3))
         ]))
 
     def forward(self, x):
@@ -97,7 +97,7 @@ class Discriminator(nn.Module):
         self.conv = nn.Sequential(OrderedDict([
             # Block 1
             ('conv1', nn.Conv2d(3, 32, kernel_size=(3, 3), padding=(1, 1))),
-            ('batchNorm1', nn.BatchNorm2d(32)),
+            #('batchNorm1', nn.BatchNorm2d(32)),
             ('lReLU1', nn.LeakyReLU(0.2, inplace=True)),
             ('conv1b', nn.Conv2d(32, 32, kernel_size=(3, 3), padding=(1, 1), stride=(2, 2))),
             ('lReLU1b', nn.LeakyReLU(0.2, inplace=True)),

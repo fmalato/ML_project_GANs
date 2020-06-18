@@ -32,76 +32,31 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(discriminator, device, image, target, optim_d, lossT=False):
-    disc_train_real = target.float().to(device)
-    batch_size = disc_train_real.size(0)
-
-    if lossT:
-        criterion = nn.BCELoss(weight=torch.full((batch_size,), 2, device=device))
-    else:
-        criterion = nn.BCELoss(weight=torch.full((batch_size,), 1, device=device))
-    # Discriminator true
-    optim_d.zero_grad()
-    random_real = random.uniform(0.9, 1.0)
-    label = torch.full((batch_size,), random_real, device=device).cuda()
-    output_d = discriminator(disc_train_real.float()).view(-1)
-    loss_d_real = criterion(output_d.float(), label.float()).cuda()
-    D_x = output_d.mean().item()
-    loss_d_real.backward()
-
-    # Discriminator false
-    output_d = discriminator(image.detach().float()).view(-1)
-    random_fake = random.uniform(0.0, 0.1)
-    label.fill_(random_fake)
-    loss_d_fake = criterion(output_d.float(), label.float()).cuda()
-    D_G_z1 = output_d.mean().item()
-    loss_d = loss_d_real + loss_d_fake
-
-    loss_d_fake.backward()
-    optim_d.step()
-
-    # Generator
-    label.fill_(random_real)
-    output_d = discriminator(image.detach().float()).view(-1)
-    loss_g = criterion(output_d.float(), label.float()).cuda()
-    D_G_z2 = output_d.mean().item()
-
-    return loss_g, loss_d, D_x, D_G_z1, D_G_z2
-
-
-def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, lossT=False):
+def LossA(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, lossT=False):
     if last_dx < 0.8 or last_dgz > 0.2:
         discriminator.train()
     else:
         discriminator.eval()
     batch_size = output_g.size(0)
-    criterion = nn.BCELoss()
-    label = torch.full((batch_size,), random.uniform(0.7, 1.0), device=device)
-    label_f = torch.full((batch_size,), random.uniform(0.0, 0.3), device=device)
 
     # Generator
-    output_d = discriminator(output_g.detach()).view(-1)
+    output_d = discriminator(output_g.detach()).view(-1).clamp(1e-7, 1-1e-7)
     d_g_z = output_d.mean().item()
-    loss_g = criterion(output_d.detach(), label)
+    loss_g = -torch.log(output_d)
     if lossT:
         loss_g *= 2
 
     # Discriminator
     optim_d.zero_grad()
-    output_t = discriminator(target.detach()).view(-1)
+    output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
+    if output_t.cpu().detach().numpy().any() <= 0.0:
+        print(output_t)
     d_x = output_t.mean().item()
     if last_dx < 0.8 or last_dgz > 0.2:
-        train = torch.cat((output_t, output_d)).to(device)
-        labels = torch.cat((label, label_f))
-        idxs = list(range(0, batch_size * 2, 1))
-        np.random.shuffle(idxs)
-        train = train[idxs]
-        labels = labels[idxs]
-        
-        loss_d = criterion(train, labels).to(device)
+        loss_d = -torch.log(output_t) -torch.log(torch.full((batch_size,), 1., device=device) - output_d)
         if lossT:
             loss_d *= 2
-        loss_d.backward()
+        loss_d.mean().backward()
 
         optim_d.step()
     else:

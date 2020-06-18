@@ -11,7 +11,7 @@ from datetime import date
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
 from utils import init_weights
-from losses import LossE, LossP, LossA, LossT, LossA_2
+from losses import LossE, LossP, LossA, LossT
 
 
 def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load_weights=False, state_dict=''):
@@ -39,11 +39,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             criterions.append(LossP)
             vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
         elif el == 'A':
-            criterions.append(LossA_2)
+            criterions.append(LossA)
             disc = Discriminator()
             disc.float()
             disc.cuda()
-            optim_d = optim.Adam(disc.parameters(), lr=1e-4)
+            optim_d = optim.Adam(disc.parameters(), lr=1e-4, betas=(0.5, 0.999))
             lossA = True
         elif el == 'T':
             criterions.append(LossT)
@@ -64,7 +64,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             targets = targets.to(device)
             bicub = bicub.to(device)
 
-            loss = Tensor(np.zeros(1))
+            loss = Tensor(np.zeros(1)).cuda()
             output = net(images.float())
             output = torch.add(output, bicub).clamp(0, 1)
             output = output.to(device)
@@ -73,7 +73,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                 if criterion == LossP:
                     loss += criterion(vgg, device, output.float(), targets.float())
 
-                elif criterion == LossA_2:
+                elif criterion == LossA:
                     if 'T' in loss_type:
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
                                                                targets.float(), optim_d, D_x, D_G_z,
@@ -82,7 +82,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
                                                                targets.float(), optim_d, D_x, D_G_z,
                                                                False)
-                    loss += loss_g
+                    loss += loss_g.mean().item()
 
                 elif criterion == LossT:
                     loss += criterion(vgg_T, device, output.float(), targets.float())
@@ -96,8 +96,8 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             optimizer.step()
 
             if lossA:
-                losses_d.append(loss_d.detach().item())
-                losses_g.append(loss_g.detach().item())
+                losses_d.append(loss_d.detach().mean().item())
+                losses_g.append(loss_g.detach().mean().item())
                 D_xs.append(D_x)
                 D_gs.append(D_G_z)
 
@@ -148,6 +148,7 @@ if __name__ == '__main__':
     batch_size = 8
     epochs = 1
     lr = 1e-4
+    betas = (0.5, 0.999)
     loss_type = ['P', 'A']
     load_weights = False
     state_dict = 'state_1e_E'
@@ -159,7 +160,7 @@ if __name__ == '__main__':
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     try:
-        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr), device, epochs=epochs,
+        multiple_train(net, loss_type, optim.Adam(net.parameters(), lr=lr, betas=betas), device, epochs=epochs,
                        batch_size=batch_size * 4,
                        load_weights=load_weights, state_dict=state_dict)
     except KeyboardInterrupt:
