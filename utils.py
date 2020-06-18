@@ -145,7 +145,7 @@ def gram_matrix(input):
 
     features = input.view(a * b, c * d)  # resise F_XL into \hat F_XL
 
-    G = torch.mm(features, features.t())  # compute the gram product
+    G = features.mm(features.t())  # compute the gram product
 
     return G
 

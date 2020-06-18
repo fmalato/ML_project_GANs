@@ -32,9 +32,9 @@ def psnr(lr, hr):
     m, n, c = lr.shape[0], hr.shape[1], hr.shape[2]
     mse = np.sum((lr - hr) ** 2) / (m * n * c)
 
-    return 10 * math.log10(1 / mse)
+    return 20 * math.log10(1 / math.sqrt(mse))
 
-def test_single(net, img, target, image_name):
+def test_single(net, img, target, image_name, model_name):
     net.eval()
     tens = transforms.ToTensor()
     toimg = transforms.ToPILImage()
@@ -45,29 +45,23 @@ def test_single(net, img, target, image_name):
 
     inp = inp.view((1, 3, 56, 56))
     output = net(inp).clamp(0, 255)
-    #output = torch.add(output, torch.from_numpy(PER_CHANNEL_MEANS).view((1, 3, 256, 256))).clamp(0, 255)
+
     o = output.view((3, 224, 224))
     o = o.data.numpy()
     o = np.swapaxes(o, 0, 1)
     o = np.swapaxes(o, 1, 2)
-    """o = o * 255
-    o = toimg(o.astype(np.uint8))"""
+
     bicub_res = resize(img, (224, 224), anti_aliasing=True)
-    """bicub_res = (bicub_res * 255).astype(np.uint8)
-    out = np.asarray(o).astype(np.uint8)
-    c = 255 - out  # a temp uint8 array here
-    np.putmask(bicub_res, c < bicub_res, c)  # a temp bool array here"""
+
     result = np.clip(o + bicub_res, 0., 1.)
     # PSNR:
     score = psnr(result, target)
-    #result = Image.fromarray(result)
     if image_name == "bird.png":
-        io.imshow(result)
+        fig, ax1 = plt.subplots(1, 1)
+        ax1.imshow(result)
+        ax1.set_title(model_name)
         plt.show()
 
-    """if image_name == 'bird.png':
-        output_img = toimg(output.detach().numpy().reshape((256, 256, 3)).astype(np.uint8) * 255)
-        output_img.show()"""
     print('PSNR score for test image {x} is: %f'.format(x=image_name) % score)
     return score
 
@@ -95,6 +89,6 @@ if __name__ == '__main__':
             img = resize(img, (224, 224), anti_aliasing=True)
             target = img
             img = downscale_local_mean(img, (4, 4, 1))
-            avg_psnr += test_single(net, img, target, image_name)
+            avg_psnr += test_single(net, img, target, image_name, el)
         avg_psnr = avg_psnr / len(img_dir)
         print('Average psnr score is: %f' % avg_psnr)

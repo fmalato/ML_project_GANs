@@ -152,6 +152,8 @@ class VGGFeatureExtractor(nn.Module):
     def __init__(self, pool_layer_num=9):
         super().__init__()
         vgg = vgg19(pretrained=True)
+        for param in vgg.features.parameters():
+            param.requires_grad_(False)
         self.features = nn.Sequential(*list(vgg.features.children())[:pool_layer_num])
 
     def forward(self, x):
