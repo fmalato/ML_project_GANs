@@ -29,7 +29,7 @@ class COCO(Dataset):
 
         image = io.imread(self.image_paths + self.train_imgs[index])
         target = io.imread(self.target_paths + self.train_imgs[index])
-        bicub = resize(image, (self.upsample_size, self.upsample_size), anti_aliasing=True)
+        bicub = resize(image, (self.upsample_size, self.upsample_size))
 
         image = np.array(image, dtype=np.float64) / 255
         target = np.array(target, dtype=np.float64) / 255
