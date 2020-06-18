@@ -49,8 +49,6 @@ def LossA(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, l
     # Discriminator
     optim_d.zero_grad()
     output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
-    if output_t.cpu().detach().numpy().any() <= 0.0:
-        print(output_t)
     d_x = output_t.mean().item()
     if last_dx < 0.8 or last_dgz > 0.2:
         loss_d = -torch.log(output_t) -torch.log(torch.full((batch_size,), 1., device=device) - output_d)
