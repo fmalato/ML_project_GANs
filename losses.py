@@ -77,8 +77,8 @@ def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz,
         discriminator.eval()
     batch_size = output_g.size(0)
     criterion = nn.BCELoss()
-    label = torch.full((batch_size,), 0.9, device=device)
-    label_f = torch.full((batch_size,), 0.0, device=device)
+    label = torch.full((batch_size,), random.uniform(0.7, 1.0), device=device)
+    label_f = torch.full((batch_size,), random.uniform(0.0, 0.3), device=device)
 
     # Generator
     output_d = discriminator(output_g.detach()).view(-1)
@@ -95,9 +95,6 @@ def LossA_2(discriminator, device, output_g, target, optim_d, last_dx, last_dgz,
         train = torch.cat((output_t, output_d)).to(device)
         labels = torch.cat((label, label_f))
         idxs = list(range(0, batch_size * 2, 1))
-        np.random.shuffle(idxs)
-        train = train[idxs]
-        labels = labels[idxs]
         loss_d = criterion(train, labels)
         if lossT:
             loss_d *= 2
