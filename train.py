@@ -23,6 +23,8 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
     losses = []
     losses_d = []
     losses_g = []
+    last_out = []
+    last_tar = []
     D_xs = []
     D_gs = []
     criterions = []
@@ -87,11 +89,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                 elif criterion == LossA:
                     if 'T' in loss_type:
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
-                                                               targets.float(), optim_d, D_x, D_G_z,
+                                                               targets.float(), optim_d, [last_out, last_tar],
                                                                True, first_step=first_step)
                     else:
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
-                                                               targets.float(), optim_d, D_x, D_G_z,
+                                                               targets.float(), optim_d, [last_out, last_tar],
                                                                False, first_step=first_step)
                     loss += loss_g.mean().item()
 
@@ -102,6 +104,9 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                     loss += criterion(device, output.float(), targets.float())
 
             first_step = False
+            if not first_step:
+                last_out = output
+                last_tar = targets
             losses.append(loss.detach().item())
 
             loss.backward()
