@@ -43,9 +43,11 @@ for e in range(epochs):
     print('Epoch %d' % (e + 1))
     try:
         if is_adv:
-            train(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch=e, epochs=epochs)
+            train(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch=e, epochs=epochs,
+                  batch_size=batch_size)
         else:
-            train(net, None, optim_g, None, device, data_loader, start_step, current_epoch=e, epochs=epochs)
+            train(net, None, optim_g, None, device, data_loader, start_step, current_epoch=e, epochs=epochs,
+                  batch_size=batch_size)
     except KeyboardInterrupt:
         print('Training interrupted. Saving model.')
         today = date.today()

@@ -112,6 +112,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             loss.backward()
             optimizer.step()
 
+
             if lossA:
                 losses_d.append(loss_d.detach().mean().item())
                 losses_g.append(loss_g.detach().mean().item())

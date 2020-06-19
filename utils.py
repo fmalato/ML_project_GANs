@@ -194,7 +194,6 @@ def print_stats(is_adv, current_epoch, epochs, num_batches, current_step, losses
 
 
 def time_stats(epoch_times, end_step, start_step, num_imgs, i):
-    epoch_times.append(end_step - start_step)
     hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (num_imgs - i) / 100, 3600)
     minutes, seconds = divmod(rem, 60)
     print('Time for the last step: {:05.2f} s    Epoch ETA: {:0>2}:{:0>2}:{:0>2}'.format(
@@ -212,11 +211,3 @@ def true_or_false(labels):
         else:
             result.append(1)
     return result
-
-def compare(list1, list2):
-    correct = 0
-    for x, y in zip(list1, list2):
-        if x == y:
-            correct += 1
-
-    return correct / len(list1)

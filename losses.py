@@ -3,7 +3,7 @@ import torch.nn as nn
 import random
 import numpy as np
 
-from utils import gram_matrix, true_or_false, compare
+from utils import gram_matrix, true_or_false
 
 
 """ Baseline MSE Loss """
@@ -28,7 +28,7 @@ def LossP(vgg, device, image, target):
     real_feat = vgg_5(target)
     loss_5 = torch.mean((extr_feat - real_feat) ** 2)
 
-    return ((2e-1)*loss_2 + (2e-2)*loss_5).cuda()
+    return (2e-1*loss_2 + 2e-2*loss_5).cuda()
 
 
 """ GAN generator and discriminator Losses """
@@ -43,10 +43,8 @@ def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=Fa
         with torch.no_grad:
             d_true = true_or_false(discriminator(lb_true).detach().numpy())
             d_fake = true_or_false(discriminator(lb_fake).detach().numpy())
-            lb_true = np.ones(len(lb_true))
-            lb_fake = np.ones(len(lb_fake))
-            perf_true = compare(d_true, lb_true)
-            perf_fake = compare(d_fake, lb_fake)
+            perf_true = d_true.count(1) / len(d_true)
+            perf_fake = d_true.count(0) / len(d_fake)
         if perf_fake < 0.8 or perf_true < 0.8:
             discriminator.train()
         else:
@@ -56,7 +54,7 @@ def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=Fa
     # Generator
     output_d = discriminator(output_g.detach()).view(-1).clamp(1e-7, 1-1e-7)
     d_g_z = output_d.mean().item()
-    loss_g = -torch.log(output_d)
+    loss_g = - 1.0 * torch.log(output_d)
     if lossT:
         loss_g *= 2
 
