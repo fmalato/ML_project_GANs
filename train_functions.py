@@ -120,7 +120,7 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
 
         # discriminator, device, output_g, target, optim_d, last_batch, lossT=False, first_step=False
         loss += LossE(device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_out, last_tar],
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
                                            lossT=False, first_step=first_step)
         loss += loss_g.mean().item()
         first_step = False
@@ -188,7 +188,7 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_out, last_tar],
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
                                            lossT=False, first_step=first_step)
         loss += loss_g.mean().item()
 
@@ -257,7 +257,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         output = output.to(device)
 
         loss += LossE(device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_out, last_tar],
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
                                            lossT=False, first_step=first_step)
         loss += loss_g.mean().item()
         loss += LossT(vgg_T, device, output.float(), targets.float())
@@ -328,7 +328,7 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_out, last_tar],
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
                                            lossT=False, first_step=first_step)
         loss += loss_g.mean().item()
         loss += LossT(vgg_T, device, output.float(), targets.float())
