@@ -6,7 +6,7 @@ import math
 import matplotlib.pyplot as plt
 
 from skimage import io
-from skimage.transform import resize, downscale_local_mean
+from skimage.transform import resize, downscale_local_mean, rescale
 
 from FCNN_CPU import FCNN
 
@@ -31,7 +31,7 @@ def test_single(net, img, target, image_name, model_name):
     o = np.swapaxes(o, 0, 1)
     o = np.swapaxes(o, 1, 2)
 
-    bicub_res = resize(img, (224, 224), anti_aliasing=True)
+    bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
 
     result = np.clip(o + bicub_res +0.05, 0., 1.)
     # PSNR
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.eval()
     #tests = os.listdir('trained_models/')
-    tests = ['state_1e_PA_Jun.pth', 'state_1e_PAT.pth']
+    tests = ['state_1e_PA_Jun.pth', 'state_3e_PAT.pth', 'state_2e_E.pth', 'state_2e_P.pth']
     img_path = 'evaluation/Set5/'
     if '.DS_Store' in tests:
         os.remove('trained_models/.DS_Store')
@@ -80,3 +80,10 @@ if __name__ == '__main__':
             avg_psnr += test_single(net, img, target, image_name, el)
         avg_psnr = avg_psnr / len(img_dir)
         print('Average psnr score is: %f' % avg_psnr)
+    img = io.imread('{p}{x}'.format(p=img_path, x='bird.png'))
+    img = resize(img, (56, 56), anti_aliasing=True)
+    # TODO: check rescaling
+    bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
+    fig, ax1 = plt.subplots(1, 1)
+    ax1.imshow(bicub_res)
+    plt.show()

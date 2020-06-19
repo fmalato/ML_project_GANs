@@ -3,7 +3,7 @@ import torch.nn as nn
 import random
 import numpy as np
 
-from utils import gram_matrix
+from utils import gram_matrix, true_or_false, compare
 
 
 """ Baseline MSE Loss """
@@ -32,11 +32,23 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, lossT=False):
-    if last_dx < 0.8 or last_dgz > 0.2:
+def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=False, first_step=False):
+    if first_step:
         discriminator.train()
     else:
-        discriminator.eval()
+        lb_true = last_batch[0]
+        lb_fake = last_batch[1]
+        with torch.no_grad:
+            d_true = true_or_false(discriminator(lb_true).detach().numpy())
+            d_fake = true_or_false(discriminator(lb_fake).detach().numpy())
+            lb_true = np.ones(len(lb_true))
+            lb_fake = np.ones(len(lb_fake))
+            perf_true = compare(d_true, lb_true)
+            perf_fake = compare(d_fake, lb_fake)
+        if perf_fake < 0.8 or perf_true < 0.8:
+            discriminator.train()
+        else:
+            discriminator.eval()
     batch_size = output_g.size(0)
 
     # Generator
@@ -50,8 +62,8 @@ def LossA(discriminator, device, output_g, target, optim_d, last_dx, last_dgz, l
     optim_d.zero_grad()
     output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
     d_x = output_t.mean().item()
-    if last_dx < 0.8 or last_dgz > 0.2:
-        loss_d = -torch.log(output_t) -torch.log(torch.full((batch_size,), 1., device=device) - output_d)
+    if perf_fake < 0.8 or perf_true < 0.8 or first_step:
+        loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
         if lossT:
             loss_d *= 2
         loss_d.mean().backward()

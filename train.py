@@ -56,6 +56,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
         start_step = start
         print('Epoch %d.' % (e + 1))
         epoch_times = []
+        first_step = True
 
         for i, (images, targets, bicub) in enumerate(data_loader):
             optimizer.zero_grad()
@@ -77,11 +78,11 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                     if 'T' in loss_type:
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
                                                                targets.float(), optim_d, D_x, D_G_z,
-                                                               True)
+                                                               True, first_step=first_step)
                     else:
                         loss_g, loss_d, D_x, D_G_z = criterion(disc, device, output.float(),
                                                                targets.float(), optim_d, D_x, D_G_z,
-                                                               False)
+                                                               False, first_step=first_step)
                     loss += loss_g.mean().item()
 
                 elif criterion == LossT:
@@ -90,6 +91,7 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
                 else:
                     loss += criterion(device, output.float(), targets.float())
 
+            first_step = False
             losses.append(loss.detach().item())
 
             loss.backward()

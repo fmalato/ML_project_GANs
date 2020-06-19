@@ -145,7 +145,7 @@ def gram_matrix(input):
 
     features = input.view(a * b, c * d)  # resise F_XL into \hat F_XL
 
-    G = features.mm(features.t())  # compute the gram product
+    G = features.mm(features.t())#.div(a * b * c * d)  # compute the gram product
 
     return G
 
@@ -177,39 +177,46 @@ def generate_data():
     print('Removing grayscale images')
     remove_grayscale()
 
-def img_to_pt():
-    if not os.path.exists('data_pt/'):
-        os.mkdir('data_pt/')
-        os.mkdir('data_pt/train/')
-        os.mkdir('data_pt/target/')
-        os.mkdir('data_pt/bicub/')
-    imgs = os.listdir('data/train')
-    i = 0
-    for el in imgs:
-        if i % 100 == 0:
-            print('Processed: %d/%d' % (i, len(imgs)))
-        name = os.path.splitext(el)[0]
-        image = io.imread('data/train/{x}'.format(x=el))
-        target = io.imread('data/target/{x}'.format(x=el))
-        bicub = resize(image, (128, 128), anti_aliasing=True)
 
-        image = np.array(image, dtype=np.float64) / 255
-        target = np.array(target, dtype=np.float64) / 255
+def print_stats(is_adv, current_epoch, epochs, num_batches, current_step, losses, losses_g, losses_d, D_xs, D_gs, step_update):
+    if is_adv:
+        print('Epoch %d/%d - Step: %d/%d  Loss G: %f (%f) Loss D: %f  D(x): %f  D(G(z)): %f' % (current_epoch+1, epochs,
+                                                                                                current_step, num_batches,
+                                                                                                sum(losses) / step_update,
+                                                                                                sum(losses_g) / step_update,
+                                                                                                sum(losses_d) / step_update,
+                                                                                                sum(D_xs) / step_update,
+                                                                                                sum(D_gs) / step_update))
+    else:
+        print('Epoch %d/%d - Step: %d/%d  Loss G: %f' % (current_epoch+1, epochs,
+                                                         current_step, num_batches,
+                                                         sum(losses) / step_update))
 
-        image = np.swapaxes(image, 2, 1)
-        target = np.swapaxes(target, 2, 1)
-        bicub = np.swapaxes(bicub, 2, 1)
-        image = np.swapaxes(image, 1, 0)
-        target = np.swapaxes(target, 1, 0)
-        bicub = np.swapaxes(bicub, 1, 0)
 
-        image = torch.from_numpy(image)
-        target = torch.from_numpy(target)
-        bicub = torch.from_numpy(bicub)
+def time_stats(epoch_times, end_step, start_step, num_imgs, i):
+    epoch_times.append(end_step - start_step)
+    hours, rem = divmod((sum(epoch_times) / len(epoch_times)) * (num_imgs - i) / 100, 3600)
+    minutes, seconds = divmod(rem, 60)
+    print('Time for the last step: {:05.2f} s    Epoch ETA: {:0>2}:{:0>2}:{:0>2}'.format(
+        end_step - start_step,
+        int(hours),
+        int(minutes),
+        int(seconds)))
 
-        torch.save(image, 'data_pt/train/{n}.pt'.format(n=name))
-        torch.save(target, 'data_pt/target/{n}.pt'.format(n=name))
-        torch.save(bicub, 'data_pt/bicub/{n}.pt'.format(n=name))
-        i += 1
 
-#img_to_pt()
+def true_or_false(labels):
+    result = []
+    for el in labels:
+        if el < 0.5:
+            result.append(0)
+        else:
+            result.append(1)
+    return result
+
+def compare(list1, list2):
+    correct = 0
+    for x, y in zip(list1, list2):
+        if x == y:
+            correct += 1
+
+    return correct / len(list1)
