@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from datetime import date
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
-from dataset import COCO
+from dataset_CPU import COCO
 from utils import init_weights, print_stats, time_stats
 from losses import LossE, LossP, LossA, LossT
 
@@ -56,14 +56,14 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
     PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
     PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
@@ -165,14 +165,14 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
     PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
     PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
@@ -235,14 +235,14 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
     PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
     PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
@@ -307,14 +307,14 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
     PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
     PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[1].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[2].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[3].fill(0.40904046)
+    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
+    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
+    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
     PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
