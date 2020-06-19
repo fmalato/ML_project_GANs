@@ -41,8 +41,8 @@ def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=Fa
         lb_true = last_batch[0]
         lb_fake = last_batch[1]
         with torch.no_grad():
-            d_true = true_or_false(discriminator(lb_true.float()).detach().numpy())
-            d_fake = true_or_false(discriminator(lb_fake.float()).detach().numpy())
+            d_true = true_or_false(discriminator(lb_true.float()).cpu().detach().numpy())
+            d_fake = true_or_false(discriminator(lb_fake.float()).cpu().detach().numpy())
             perf_true = d_true.count(1) / len(d_true)
             perf_fake = d_true.count(0) / len(d_fake)
         if perf_fake < 0.8 or perf_true < 0.8:
