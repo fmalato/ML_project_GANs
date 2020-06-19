@@ -178,6 +178,49 @@ def generate_data():
     remove_grayscale()
 
 
+def img_to_pt(chunk_size=16):
+    if not os.path.exists('data_pt/'):
+        os.mkdir('data_pt/')
+        os.mkdir('data_pt/train/')
+        os.mkdir('data_pt/target/')
+        os.mkdir('data_pt/bicub/')
+    imgs = os.listdir('data/train')
+    i = 1
+    images = []
+    targets = []
+    bicubs = []
+    for el in imgs:
+        if i % 100 == 0:
+            print('Processed: %d/%d' % (i, len(imgs)))
+        image = io.imread('data/train/{x}'.format(x=el)) / 255
+        target = io.imread('data/target/{x}'.format(x=el)) / 255
+        bicub = resize(image, (128, 128), anti_aliasing=True)
+
+        image = np.swapaxes(image, 2, 1)
+        target = np.swapaxes(target, 2, 1)
+        bicub = np.swapaxes(bicub, 2, 1)
+        image = np.swapaxes(image, 1, 0)
+        target = np.swapaxes(target, 1, 0)
+        bicub = np.swapaxes(bicub, 1, 0)
+
+        images.append(torch.from_numpy(image).view((1, 3, 32, 32)))
+        targets.append(torch.from_numpy(target).view((1, 3, 128, 128)))
+        bicubs.append(torch.from_numpy(bicub).view((1, 3, 128, 128)))
+        if i % chunk_size == 0 and i is not 0:
+            tens_i = torch.cat(images)
+            tens_t = torch.cat(targets)
+            tens_b = torch.cat(bicubs)
+            name = 'chunk_{i}'.format(i=i)
+            torch.save(tens_i, 'data_pt/train/{n}.pt'.format(n=name))
+            torch.save(tens_t, 'data_pt/target/{n}.pt'.format(n=name))
+            torch.save(tens_b, 'data_pt/bicub/{n}.pt'.format(n=name))
+            images = []
+            targets = []
+            bicubs = []
+
+        i += 1
+
+
 def print_stats(is_adv, current_epoch, epochs, num_batches, current_step, losses, losses_g, losses_d, D_xs, D_gs, step_update):
     if is_adv:
         print('Epoch %d/%d - Step: %d/%d  Loss G: %f (%f) Loss D: %f  D(x): %f  D(G(z)): %f' % (current_epoch+1, epochs,
@@ -211,3 +254,4 @@ def true_or_false(labels):
         else:
             result.append(1)
     return result
+

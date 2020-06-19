@@ -13,10 +13,11 @@ from utils import random_crop, square_patch, custom_bicubic
 
 class COCO(Dataset):
 
-    def __init__(self, image_paths, target_paths, scale_factor=4, patch_size=32):   # initial logic happens like transform
+    def __init__(self, image_paths, target_paths, bicubs_path, scale_factor=4, patch_size=32):   # initial logic happens like transform
 
         self.image_paths = image_paths
         self.target_paths = target_paths
+        self.bicubs_path = bicubs_path
         self.transforms = transforms.ToTensor()
         self.scale_factor = scale_factor
         self.patch_size = patch_size
@@ -27,19 +28,9 @@ class COCO(Dataset):
 
     def __getitem__(self, index):
 
-        image = io.imread(self.image_paths + self.train_imgs[index])
-        target = io.imread(self.target_paths + self.train_imgs[index])
-        bicub = resize(image, (self.upsample_size, self.upsample_size), anti_aliasing=True)
-
-        image = np.array(image, dtype=np.float64) / 255
-        target = np.array(target, dtype=np.float64) / 255
-
-        image = np.swapaxes(image, 2, 1)
-        target = np.swapaxes(target, 2, 1)
-        bicub = np.swapaxes(bicub, 2, 1)
-        image = np.swapaxes(image, 1, 0)
-        target = np.swapaxes(target, 1, 0)
-        bicub = np.swapaxes(bicub, 1, 0)
+        image = torch.load(self.image_paths + self.train_imgs[index])
+        target = torch.load(self.target_paths + self.train_imgs[index])
+        bicub = torch.load(self.bicubs_path + self.train_imgs[index])
 
         return image, target, bicub
 
