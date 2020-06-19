@@ -190,6 +190,7 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         loss += LossP(vgg, device, output.float(), targets.float())
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
                                            lossT=False, first_step=first_step)
+        first_step = False
         loss += loss_g.mean().item()
 
         losses.append(loss.detach().item())
@@ -262,6 +263,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         loss += loss_g.mean().item()
         loss += LossT(vgg_T, device, output.float(), targets.float())
 
+        first_Step = False
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
         losses_g.append(loss_g.detach().mean().item())
@@ -333,6 +335,7 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         loss += loss_g.mean().item()
         loss += LossT(vgg_T, device, output.float(), targets.float())
 
+        first_step = False
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
         losses_g.append(loss_g.detach().mean().item())
