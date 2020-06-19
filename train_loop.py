@@ -2,11 +2,11 @@ from train_functions import *
 
 
 # loss choice
-loss_type = 'PA'
+loss_type = 'PAT'
 train, is_adv = which_train(loss_type)
 # net initialization
 # Generator
-batch_size = 8    # Keep in mind: patches 32x32 already preprocessed
+batch_size = 16    # Keep in mind: patches 32x32 already preprocessed
 net = FCNN(input_channels=3, batch_size=batch_size)
 net.float()
 if torch.cuda.is_available():
