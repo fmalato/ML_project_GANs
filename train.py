@@ -34,12 +34,12 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
     PER_CHANNEL_MEANS_32[1].fill(0.47614917)
     PER_CHANNEL_MEANS_32[2].fill(0.45001204)
     PER_CHANNEL_MEANS_32[3].fill(0.40904046)
-    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32)
+    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).cuda()
     PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
     PER_CHANNEL_MEANS_128[1].fill(0.47614917)
     PER_CHANNEL_MEANS_128[2].fill(0.45001204)
     PER_CHANNEL_MEANS_128[3].fill(0.40904046)
-    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128)
+    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).cuda()
     if load_weights:
         print('Loading {x}'.format(x=state_dict))
         net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=state_dict), map_location=torch.device('cpu')))
@@ -78,8 +78,8 @@ def multiple_train(net, loss_type, optimizer, device, epochs, batch_size=1, load
             bicub = bicub.to(device)
 
             loss = Tensor(np.zeros(1)).cuda()
-            output = net(images.float() - PER_CHANNEL_MEANS_32)
-            output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128)
+            output = net(images.float() - PER_CHANNEL_MEANS_32.float())
+            output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
             output = output.to(device)
 
             for criterion in criterions:
