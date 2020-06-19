@@ -35,6 +35,8 @@ def LossP(vgg, device, image, target):
 def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=False, first_step=False):
     if first_step:
         discriminator.train()
+        perf_true = 1.0
+        per_false = 1.0
     else:
         lb_true = last_batch[0]
         lb_fake = last_batch[1]
