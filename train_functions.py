@@ -53,6 +53,7 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
     losses = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
+    PER_CHANNEL_MEANS = torch.from_numpy(np.array([0.47614917, 0.45001204, 0.40904046]))
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -62,8 +63,8 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         bicub = bicub.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
-        output = net(images.float())
-        output = torch.add(output, bicub).clamp(0, 1)
+        output = net(images.float() - PER_CHANNEL_MEANS.float())
+        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS)
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
@@ -150,6 +151,7 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
     D_gs = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
+    PER_CHANNEL_MEANS = torch.from_numpy(np.array([0.47614917, 0.45001204, 0.40904046]))
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -159,8 +161,8 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         bicub = bicub.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
-        output = net(images.float())
-        output = torch.add(output, bicub).clamp(0, 1)
+        output = net(images.float() - PER_CHANNEL_MEANS.float())
+        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS)
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
@@ -208,6 +210,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
+    PER_CHANNEL_MEANS = torch.from_numpy(np.array([0.47614917, 0.45001204, 0.40904046]))
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -217,8 +220,8 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         bicub = bicub.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
-        output = net(images.float())
-        output = torch.add(output, bicub).clamp(0, 1)
+        output = net(images.float() - PER_CHANNEL_MEANS.float())
+        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS)
         output = output.to(device)
 
         loss += LossE(device, output.float(), targets.float())
@@ -268,6 +271,7 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
+    PER_CHANNEL_MEANS = torch.from_numpy(np.array([0.47614917, 0.45001204, 0.40904046]))
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -277,8 +281,8 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         bicub = bicub.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
-        output = net(images.float())
-        output = torch.add(output, bicub).clamp(0, 1)
+        output = net(images.float() - PER_CHANNEL_MEANS.float())
+        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS)
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
