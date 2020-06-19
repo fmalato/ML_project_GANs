@@ -40,7 +40,7 @@ def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=Fa
     else:
         lb_true = last_batch[0]
         lb_fake = last_batch[1]
-        with torch.no_grad:
+        with torch.no_grad():
             d_true = true_or_false(discriminator(lb_true).detach().numpy())
             d_fake = true_or_false(discriminator(lb_fake).detach().numpy())
             perf_true = d_true.count(1) / len(d_true)
@@ -60,7 +60,11 @@ def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=Fa
 
     # Discriminator
     optim_d.zero_grad()
-    output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
+    if perf_true >= 0.8 and perf_fake >= 0.8:
+        with torch.no_grad():
+            output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
+    else:
+        output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
     d_x = output_t.mean().item()
     if perf_fake < 0.8 or perf_true < 0.8 or first_step:
         loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
@@ -90,9 +94,9 @@ def LossT(vgg, device, image, target, patch_size=16):
     batch_size = int(image[0].shape[2] / patch_size) ** 2
     idx = 0
     for el in image:
-        # one patch every 4 is computed in order to reduce computation. On the dataset there are 655114*64 16x16 patches
+        # one patch every 8 is computed in order to reduce computation. On the dataset there are 655114*64 16x16 patches
         # so I guess an eighth (kind of 5kk)  of them is a good trade-off for a 15h speed up on the training
-        if idx % 8 == 0:
+        if idx % 16 == 0:
             new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
             new = new.reshape((batch_size, 3, patch_size, patch_size))
             new = torch.split(new, 1, dim=0)
@@ -101,7 +105,7 @@ def LossT(vgg, device, image, target, patch_size=16):
     del image
     idx = 0
     for el in target:
-        if idx % 8 == 0:
+        if idx % 16 == 0:
             new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
             new = new.reshape((batch_size, 3, patch_size, patch_size))
             new = torch.split(new, 1, dim=0)
