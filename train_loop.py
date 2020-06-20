@@ -58,3 +58,11 @@ for e in range(epochs):
                                                                                        time=current_time))
     end = time.perf_counter()
     print('Epoch %d ended, elapsed time: %f seconds.' % (e + 1, round((end - start), 2)))
+print('Saving checkpoint.')
+today = date.today()
+t = time.localtime()
+current_time = time.strftime("%H:%M:%S", t)
+torch.save(net.state_dict(), 'state_{d}e_{mode}_{date}_{time}.pth'.format(d=epochs,
+                                                                          mode=''.join(loss_type),
+                                                                          date=today.strftime("%b-%d-%Y"),
+                                                                          time=current_time))
