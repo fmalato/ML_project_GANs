@@ -148,6 +148,16 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             else:
                 train_disc = False
 
+        conv = check_convergence(D_xs, D_gs)
+        # Reaching convergence after just 3 batches sounds like an unfortunate event, not convergence
+        if conv and i > int(1000 / (current_epoch+1)):
+            today = date.today()
+            t = time.localtime()
+            current_time = time.strftime("%H:%M:%S", t)
+            torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
+                                                                                    time=current_time))
+            raise KeyboardInterrupt('Convergence reached.')
+
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
             epoch_times.append(end_step - start_step)
@@ -215,6 +225,16 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
                 train_disc = True
             else:
                 train_disc = False
+
+        conv = check_convergence(D_xs, D_gs)
+        # Reaching convergence after just 3 batches sounds like an unfortunate event, not convergence
+        if conv and i > int(1000 / (current_epoch + 1)):
+            today = date.today()
+            t = time.localtime()
+            current_time = time.strftime("%H:%M:%S", t)
+            torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
+                                                                                    time=current_time))
+            raise KeyboardInterrupt('Convergence reached.')
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -286,6 +306,16 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
                 train_disc = True
             else:
                 train_disc = False
+
+        conv = check_convergence(D_xs, D_gs)
+        # Reaching convergence after just 3 batches sounds like an unfortunate event, not convergence
+        if conv and i > int(1000 / (current_epoch + 1)):
+            today = date.today()
+            t = time.localtime()
+            current_time = time.strftime("%H:%M:%S", t)
+            torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
+                                                                                    time=current_time))
+            raise KeyboardInterrupt('Convergence reached.')
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -359,6 +389,16 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             else:
                 train_disc = False
 
+        conv = check_convergence(D_xs, D_gs)
+        # Reaching convergence after just 3 batches sounds like an unfortunate event, not convergence
+        if conv and i > int(1000 / (current_epoch + 1)):
+            today = date.today()
+            t = time.localtime()
+            current_time = time.strftime("%H:%M:%S", t)
+            torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
+                                                                                    time=current_time))
+            raise KeyboardInterrupt('Convergence reached.')
+
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
             epoch_times.append(end_step - start_step)
@@ -410,3 +450,11 @@ def generate_means(batch_size):
 
     return PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128
 
+def check_convergence(dx, dg):
+    x_mean = sum(dx) / len(dx)
+    g_mean = sum(dg) / len(dg)
+    if (0.45 < x_mean < 0.55) and (0.45 < g_mean < 0.55):
+        print('Convergence reached.')
+        return True
+
+    return False
