@@ -32,23 +32,7 @@ def LossP(vgg, device, image, target):
 
 
 """ GAN generator and discriminator Losses """
-def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=False, first_step=False):
-    if first_step:
-        discriminator.train()
-        perf_true = 1.0
-        perf_fake = 1.0
-    else:
-        lb_true = last_batch[0]
-        lb_fake = last_batch[1]
-        with torch.no_grad():
-            d_true = true_or_false(discriminator(lb_true.float()).cpu().detach().numpy())
-            d_fake = true_or_false(discriminator(lb_fake.float()).cpu().detach().numpy())
-            perf_true = d_true.count(1) / len(d_true)
-            perf_fake = d_true.count(0) / len(d_fake)
-        if perf_fake < 0.8 or perf_true < 0.8:
-            discriminator.train()
-        else:
-            discriminator.eval()
+def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
 
     # Generator
@@ -60,21 +44,15 @@ def LossA(discriminator, device, output_g, target, optim_d, last_batch, lossT=Fa
 
     # Discriminator
     optim_d.zero_grad()
-    if perf_true >= 0.8 and perf_fake >= 0.8:
-        with torch.no_grad():
-            output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
-    else:
-        output_t = discriminator(target.detach()).view(-1).clamp(1e-7, 1-1e-7)
+    output_t = discriminator(target).view(-1).clamp(1e-7, 1-1e-7)
     d_x = output_t.mean().item()
-    if perf_fake < 0.8 or perf_true < 0.8 or first_step:
-        loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
+    loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
+    if train_disc:
         if lossT:
             loss_d *= 2
         loss_d.mean().backward()
 
         optim_d.step()
-    else:
-        loss_d = torch.Tensor(np.zeros(1)).to(device)
 
     return loss_g.cuda(), loss_d.cuda(), d_x, d_g_z
 
@@ -94,8 +72,8 @@ def LossT(vgg, device, image, target, patch_size=16):
     batch_size = int(image[0].shape[2] / patch_size) ** 2
     idx = 0
     for el in image:
-        # one patch every 8 is computed in order to reduce computation. On the dataset there are 655114*64 16x16 patches
-        # so I guess an eighth (kind of 5kk)  of them is a good trade-off for a 15h speed up on the training
+        # one patch every 16 is computed in order to reduce computation. On the dataset there are 655114*64 16x16 patches
+        # so I guess a sixteenth (kind of 3kk per epoch) of them is a good trade-off for a 15h speed up on the training
         if idx % 16 == 0:
             new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
             new = new.reshape((batch_size, 3, patch_size, patch_size))
@@ -113,9 +91,9 @@ def LossT(vgg, device, image, target, patch_size=16):
     del target
     del idx
 
-    loss_1 = torch.Tensor(np.zeros(1)).cuda()
-    loss_2 = torch.Tensor(np.zeros(1)).cuda()
-    loss_3 = torch.Tensor(np.zeros(1)).cuda()
+    loss_1 = torch.Tensor(np.zeros(1))
+    loss_2 = torch.Tensor(np.zeros(1))
+    loss_3 = torch.Tensor(np.zeros(1))
 
     for i, t in zip(patches, patches_target):
         loss_1 += torch.mean((gram_matrix(vgg_1(i)) - gram_matrix(vgg_1(t))) ** 2)
@@ -126,7 +104,7 @@ def LossT(vgg, device, image, target, patch_size=16):
     loss_2 = loss_2.mean().item()
     loss_3 = loss_3.mean().item()
 
-    return 3e-7 * loss_1 + 1e-6 * loss_2 + 1e-6 * loss_3
+    return torch.Tensor(3e-7 * loss_1 + 1e-6 * loss_2 + 1e-6 * loss_3).to(device)
 
 
 

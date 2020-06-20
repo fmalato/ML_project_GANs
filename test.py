@@ -16,7 +16,7 @@ def psnr(lr, hr):
     m, n, c = lr.shape[0], hr.shape[1], hr.shape[2]
     mse = np.sum((lr - hr) ** 2) / (m * n * c)
 
-    return 20 * math.log10(1 / math.sqrt(mse))
+    return 10 * math.log10(1 / mse)
 
 def test_single(net, img, target, image_name, model_name):
     net.eval()
@@ -33,7 +33,7 @@ def test_single(net, img, target, image_name, model_name):
 
     bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
 
-    result = np.clip(o + bicub_res +0.05, 0., 1.)
+    result = np.clip(o + bicub_res + 0.05, 0., 1.)
     # PSNR
     score = psnr(result, target)
     if image_name == "bird.png":
@@ -83,7 +83,18 @@ if __name__ == '__main__':
     img = io.imread('{p}{x}'.format(p=img_path, x='bird.png'))
     img = resize(img, (56, 56), anti_aliasing=True)
     # TODO: check rescaling
+    print('Testing bicubic')
     bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
+    avg_psnr = 0.0
+    for image_name in img_dir:
+        img = io.imread('{p}{x}'.format(p=img_path, x=image_name))
+        img = resize(img, (224, 224), anti_aliasing=True)
+        target = img
+        img = downscale_local_mean(img, (4, 4, 1))
+        bicub = rescale(img, (4, 4, 1), anti_aliasing=True)
+        avg_psnr += psnr(bicub, target)
+    avg_psnr = avg_psnr / len(img_dir)
+    print('Average psnr score is: %f' % avg_psnr)
     fig, ax1 = plt.subplots(1, 1)
     ax1.imshow(bicub_res)
     plt.show()
