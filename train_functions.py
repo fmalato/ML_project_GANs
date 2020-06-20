@@ -10,11 +10,11 @@ from datetime import date
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset_CPU import COCO
-from utils import init_weights, print_stats, time_stats
+from utils import init_weights, print_stats, time_stats, true_or_false
 from losses import LossE, LossP, LossA, LossT
 
 
-def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, first_step=True,
+def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
            step_update=100, batch_size=1):
 
     losses = []
@@ -26,6 +26,9 @@ def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
+        images = images.view((-1, 3, 32, 32))
+        targets = targets.view((-1, 3, 128, 128))
+        bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
@@ -49,22 +52,15 @@ def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current
 
 
 
-def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, first_step=True,
+def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
            step_update=100, batch_size=1):
 
     losses = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
-    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
-    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
+    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
+    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -72,6 +68,9 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
+        images = images.view((-1, 3, 32, 32))
+        targets = targets.view((-1, 3, 128, 128))
+        bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
@@ -94,14 +93,12 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
             start_step = time.perf_counter()
 
 
-def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, first_step=True,
+def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
             step_update=100, batch_size=1):
 
     losses = []
     losses_d = []
     losses_g = []
-    last_out = []
-    last_tar = []
     D_xs = []
     D_gs = []
     epoch_times = []
@@ -112,18 +109,20 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
+        images = images.view((-1, 3, 32, 32))
+        targets = targets.view((-1, 3, 128, 128))
+        bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
         output = torch.add(output, bicub).clamp(0, 1)
         output = output.to(device)
 
-        # discriminator, device, output_g, target, optim_d, last_batch, lossT=False, first_step=False
+        # discriminator, device, output_g, target, optim_d, last_batch, lossT=False, train_disc=False
         loss += LossE(device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
-                                           lossT=False, first_step=first_step)
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
+                                               True, train_disc=train_disc)
         loss += loss_g.mean().item()
-        first_step = False
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
@@ -134,9 +133,16 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         loss.backward()
         optim_g.step()
 
-        if not first_step:
-            last_out = output
-            last_tar = targets
+        with torch.no_grad():
+            d_true = true_or_false(disc(targets.float()).cpu().detach().numpy())
+            d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
+            perf_true = d_true.count(1) / len(d_true)
+            perf_fake = d_fake.count(0) / len(d_fake)
+            print('Perf: %d / %d' % (perf_true, perf_fake))
+            if perf_fake < 0.8 or perf_true < 0.8:
+                train_disc = True
+            else:
+                train_disc = False
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -152,28 +158,19 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             start_step = time.perf_counter()
 
 
-def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, first_step=True,
+def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
             step_update=100, batch_size=1):
 
     losses = []
     losses_d = []
     losses_g = []
-    last_out = []
-    last_tar = []
     D_xs = []
     D_gs = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
-    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
-    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
+    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
+    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -181,6 +178,9 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
+        images = images.view((-1, 3, 32, 32))
+        targets = targets.view((-1, 3, 128, 128))
+        bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
@@ -188,9 +188,8 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
-                                           lossT=False, first_step=first_step)
-        first_step = False
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
+                                           True, train_disc=train_disc)
         loss += loss_g.mean().item()
 
         losses.append(loss.detach().item())
@@ -202,9 +201,16 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         loss.backward()
         optim_g.step()
 
-        if not first_step:
-            last_out = output
-            last_tar = targets
+        with torch.no_grad():
+            d_true = true_or_false(disc(targets.float()).cpu().detach().numpy())
+            d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
+            perf_true = d_true.count(1) / len(d_true)
+            perf_fake = d_fake.count(0) / len(d_fake)
+            print('Perf: %d / %d' % (perf_true, perf_fake))
+            if perf_fake < 0.8 or perf_true < 0.8:
+                train_disc = True
+            else:
+                train_disc = False
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -226,24 +232,15 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     losses = []
     losses_d = []
     losses_g = []
-    last_out = []
-    last_tar = []
     D_xs = []
     D_gs = []
     epoch_times = []
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
-    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
-    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
+    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
+    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -251,6 +248,9 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
+        images = images.view((-1, 3, 32, 32))
+        targets = targets.view((-1, 3, 128, 128))
+        bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
@@ -258,12 +258,11 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         output = output.to(device)
 
         loss += LossE(device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
-                                           lossT=False, first_step=first_step)
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
+                                           True, train_disc=train_disc)
         loss += loss_g.mean().item()
         loss += LossT(vgg_T, device, output.float(), targets.float())
 
-        first_Step = False
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
         losses_g.append(loss_g.detach().mean().item())
@@ -273,9 +272,16 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         loss.backward()
         optim_g.step()
 
-        if not first_step:
-            last_out = output
-            last_tar = targets
+        with torch.no_grad():
+            d_true = true_or_false(disc(targets.float()).cpu().detach().numpy())
+            d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
+            perf_true = d_true.count(1) / len(d_true)
+            perf_fake = d_fake.count(0) / len(d_fake)
+            print('Perf: %d / %d' % (perf_true, perf_fake))
+            if perf_fake < 0.8 or perf_true < 0.8:
+                train_disc = True
+            else:
+                train_disc = False
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -291,14 +297,12 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             start_step = time.perf_counter()
 
 
-def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, first_step=True,
+def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
              step_update=100, batch_size=1):
 
     losses = []
     losses_d = []
     losses_g = []
-    last_out = []
-    last_tar = []
     D_xs = []
     D_gs = []
     epoch_times = []
@@ -306,16 +310,9 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
-    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
-    PER_CHANNEL_MEANS_32[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_32[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_32[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32).to(device)
-    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
-    PER_CHANNEL_MEANS_128[0][0].fill(0.47614917)
-    PER_CHANNEL_MEANS_128[0][1].fill(0.45001204)
-    PER_CHANNEL_MEANS_128[0][2].fill(0.40904046)
-    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128).to(device)
+    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
+    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -323,6 +320,9 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
+        images = images.view((-1, 3, 32, 32))
+        targets = targets.view((-1, 3, 128, 128))
+        bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
@@ -330,12 +330,11 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         output = output.to(device)
 
         loss += LossP(vgg, device, output.float(), targets.float())
-        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d, [last_tar, last_out],
-                                           lossT=False, first_step=first_step)
+        loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
+                                           True, train_disc=train_disc)
         loss += loss_g.mean().item()
         loss += LossT(vgg_T, device, output.float(), targets.float())
 
-        first_step = False
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
         losses_g.append(loss_g.detach().mean().item())
@@ -345,9 +344,16 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         loss.backward()
         optim_g.step()
 
-        if not first_step:
-            last_out = output
-            last_tar = targets
+        with torch.no_grad():
+            d_true = true_or_false(disc(targets.float()).cpu().detach().numpy())
+            d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
+            perf_true = d_true.count(1) / len(d_true)
+            perf_fake = d_fake.count(0) / len(d_fake)
+            print('Perf: %d / %d' % (perf_true, perf_fake))
+            if perf_fake < 0.8 or perf_true < 0.8:
+                train_disc = True
+            else:
+                train_disc = False
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -383,3 +389,20 @@ def which_train(loss_type):
         train = trainPAT
         is_adv = True
     return train, is_adv
+
+def generate_means(batch_size):
+    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
+    for i in range(batch_size):
+        PER_CHANNEL_MEANS_32[i][0].fill(0.47614917)
+        PER_CHANNEL_MEANS_32[i][1].fill(0.45001204)
+        PER_CHANNEL_MEANS_32[i][2].fill(0.40904046)
+    PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32)
+    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
+    for i in range(batch_size):
+        PER_CHANNEL_MEANS_128[i][0].fill(0.47614917)
+        PER_CHANNEL_MEANS_128[i][1].fill(0.45001204)
+        PER_CHANNEL_MEANS_128[i][2].fill(0.40904046)
+    PER_CHANNEL_MEANS_128 = torch.from_numpy(PER_CHANNEL_MEANS_128)
+
+    return PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128
+
