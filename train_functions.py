@@ -29,6 +29,11 @@ def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
+        # it may happen only in the last iteration of each epoch
+        if images.shape[0] != batch_size:
+            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
+            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
@@ -71,6 +76,11 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
+        # it may happen only in the last iteration of each epoch
+        if images.shape[0] != batch_size:
+            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
+            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         images = images.squeeze(0)
         targets = targets.squeeze(0)
@@ -116,6 +126,11 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
+        # it may happen only in the last iteration of each epoch
+        if images.shape[0] != batch_size:
+            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
+            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
@@ -195,6 +210,11 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
+        # it may happen only in the last iteration of each epoch
+        if images.shape[0] != batch_size:
+            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
+            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
@@ -357,6 +377,11 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
+        # it may happen only in the last iteration of each epoch
+        if images.shape[0] != batch_size:
+            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
+            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
