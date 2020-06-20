@@ -72,6 +72,10 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
 
+        images = images.squeeze(0)
+        targets = targets.squeeze(0)
+        bicub = bicub.squeeze(0)
+
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
         output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
@@ -316,7 +320,7 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
-
+        
         images = images.to(device)
         targets = targets.to(device)
         bicub = bicub.to(device)
