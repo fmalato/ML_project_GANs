@@ -9,6 +9,7 @@ from skimage import io
 from skimage.transform import resize, downscale_local_mean, rescale
 
 from FCNN_CPU import FCNN
+from utils import translate
 
 
 def psnr(lr, hr):
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.eval()
     #tests = os.listdir('trained_models/')
-    tests = ['state_1e_PA_Jun.pth', 'state_3e_PAT.pth', 'state_2e_E.pth', 'state_2e_P.pth']
+    tests = ['ENet-PA.pth', 'ENet-PAT.pth', 'state_2e_E.pth']
     img_path = 'evaluation/Set5/'
     if '.DS_Store' in tests:
         os.remove('trained_models/.DS_Store')

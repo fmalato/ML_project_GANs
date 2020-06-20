@@ -35,16 +35,10 @@ def LossP(vgg, device, image, target):
 def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
 
-    # Generator
-    output_d = discriminator(output_g.detach()).view(-1).clamp(1e-7, 1-1e-7)
-    d_g_z = output_d.mean().item()
-    loss_g = - 1.0 * torch.log(output_d)
-    if lossT:
-        loss_g *= 2
-
     # Discriminator
     optim_d.zero_grad()
     output_t = discriminator(target).view(-1).clamp(1e-7, 1-1e-7)
+    output_d = discriminator(output_g.detach()).view(-1).clamp(1e-7, 1 - 1e-7)
     d_x = output_t.mean().item()
     loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
     if train_disc:
@@ -53,6 +47,12 @@ def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_d
         loss_d.mean().backward()
 
         optim_d.step()
+
+    # Generator
+    d_g_z = output_d.mean().item()
+    loss_g = - 1.0 * torch.log(output_d)
+    if lossT:
+        loss_g *= 2
 
     return loss_g.cuda(), loss_d.cuda(), d_x, d_g_z
 
