@@ -37,27 +37,28 @@ if load_weights:
     net.load_state_dict(torch.load('trained_models/{x}.pth'.format(x=state_dict), map_location=torch.device('cpu')))
     starting_epoch = int(re.sub("[^0-9]", "", state_dict))
 # training procedure
-for e in range(epochs):
-    start = time.perf_counter()
-    start_step = start
-    print('Epoch %d' % (e + 1))
-    try:
+try:
+    for e in range(epochs):
+        start = time.perf_counter()
+        start_step = start
+        print('Epoch %d' % (e + 1))
         if is_adv:
             train(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch=e, epochs=epochs,
                   batch_size=batch_size)
         else:
             train(net, None, optim_g, None, device, data_loader, start_step, current_epoch=e, epochs=epochs,
                   batch_size=batch_size)
-    except KeyboardInterrupt:
-        print('Training interrupted. Saving model.')
-        today = date.today()
-        t = time.localtime()
-        current_time = time.strftime("%H:%M:%S", t)
-        torch.save(net.state_dict(), 'state_interrupt_{mode}_{date}_{time}.pth'.format(mode=''.join(loss_type),
-                                                                                       date=today.strftime("%b-%d-%Y"),
-                                                                                       time=current_time))
-    end = time.perf_counter()
-    print('Epoch %d ended, elapsed time: %f seconds.' % (e + 1, round((end - start), 2)))
+        end = time.perf_counter()
+        print('Epoch %d ended, elapsed time: %f seconds.' % (e + 1, round((end - start), 2)))
+
+except KeyboardInterrupt:
+    print('Training interrupted. Saving model.')
+    today = date.today()
+    t = time.localtime()
+    current_time = time.strftime("%H:%M:%S", t)
+    torch.save(net.state_dict(), 'state_interrupt_{mode}_{date}_{time}.pth'.format(mode=''.join(loss_type),
+                                                                                   date=today.strftime("%b-%d-%Y"),
+                                                                                   time=current_time))
 print('Saving checkpoint.')
 today = date.today()
 t = time.localtime()

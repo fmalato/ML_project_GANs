@@ -29,11 +29,6 @@ def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
-        # it may happen only in the last iteration of each epoch
-        if images.shape[0] != batch_size:
-            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
-            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
@@ -126,11 +121,6 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
-        # it may happen only in the last iteration of each epoch
-        if images.shape[0] != batch_size:
-            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
-            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
@@ -171,7 +161,6 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             current_time = time.strftime("%H:%M:%S", t)
             torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
                                                                                     time=current_time))
-            raise KeyboardInterrupt('Convergence reached.')
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -254,7 +243,6 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             current_time = time.strftime("%H:%M:%S", t)
             torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
                                                                                     time=current_time))
-            raise KeyboardInterrupt('Convergence reached.')
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -335,7 +323,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             current_time = time.strftime("%H:%M:%S", t)
             torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
                                                                                     time=current_time))
-            raise KeyboardInterrupt('Convergence reached.')
+            
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -422,7 +410,6 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             current_time = time.strftime("%H:%M:%S", t)
             torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
                                                                                     time=current_time))
-            raise KeyboardInterrupt('Convergence reached.')
 
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
@@ -459,14 +446,14 @@ def which_train(loss_type):
         is_adv = True
     return train, is_adv
 
-def generate_means(batch_size):
-    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, 32, 32))
+def generate_means(batch_size, size=32, scale_factor=4):
+    PER_CHANNEL_MEANS_32 = np.zeros((batch_size, 3, size, size))
     for i in range(batch_size):
         PER_CHANNEL_MEANS_32[i][0].fill(0.47614917)
         PER_CHANNEL_MEANS_32[i][1].fill(0.45001204)
         PER_CHANNEL_MEANS_32[i][2].fill(0.40904046)
     PER_CHANNEL_MEANS_32 = torch.from_numpy(PER_CHANNEL_MEANS_32)
-    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, 128, 128))
+    PER_CHANNEL_MEANS_128 = np.zeros((batch_size, 3, size * scale_factor, size * scale_factor))
     for i in range(batch_size):
         PER_CHANNEL_MEANS_128[i][0].fill(0.47614917)
         PER_CHANNEL_MEANS_128[i][1].fill(0.45001204)
