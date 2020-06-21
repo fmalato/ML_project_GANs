@@ -229,7 +229,6 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
             perf_true = d_true.count(1) / len(d_true)
             perf_fake = d_fake.count(0) / len(d_fake)
-            print('Perf: %d / %d' % (perf_true, perf_fake))
             if perf_fake < 0.8 or perf_true < 0.8:
                 train_disc = True
             else:
@@ -309,7 +308,6 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
             perf_true = d_true.count(1) / len(d_true)
             perf_fake = d_fake.count(0) / len(d_fake)
-            print('Perf: %d / %d' % (perf_true, perf_fake))
             if perf_fake < 0.8 or perf_true < 0.8:
                 train_disc = True
             else:
@@ -396,7 +394,6 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
             perf_true = d_true.count(1) / len(d_true)
             perf_fake = d_fake.count(0) / len(d_fake)
-            print('Perf: %d / %d' % (perf_true, perf_fake))
             if perf_fake < 0.8 or perf_true < 0.8:
                 train_disc = True
             else:

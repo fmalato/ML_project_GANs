@@ -35,8 +35,8 @@ def LossP(vgg, device, image, target):
 def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
     criterion = nn.BCELoss()
-    l_true = torch.full((batch_size,), 1., device=device)
-    l_fake = torch.full((batch_size,), 0., device=device)
+    l_true = torch.full((batch_size,), random.uniform(0.7, 1.0), device=device)
+    l_fake = torch.full((batch_size,), random.uniform(0.0, 0.3), device=device)
 
     # Discriminator
     optim_d.zero_grad()
@@ -96,20 +96,20 @@ def LossT(vgg, device, image, target, patch_size=16):
     del target
     del idx
 
-    loss_1 = torch.Tensor(np.zeros(1))
-    loss_2 = torch.Tensor(np.zeros(1))
-    loss_3 = torch.Tensor(np.zeros(1))
+    loss_1 = torch.Tensor(np.zeros(1)).cuda()
+    loss_2 = torch.Tensor(np.zeros(1)).cuda()
+    loss_3 = torch.Tensor(np.zeros(1)).cuda()
 
     for i, t in zip(patches, patches_target):
         loss_1 += torch.mean((gram_matrix(vgg_1(i)) - gram_matrix(vgg_1(t))) ** 2)
         loss_2 += torch.mean((gram_matrix(vgg_2(i)) - gram_matrix(vgg_2(t))) ** 2)
         loss_3 += torch.mean((gram_matrix(vgg_3(i)) - gram_matrix(vgg_3(t))) ** 2)
 
-    loss_1 = loss_1.mean().item()
-    loss_2 = loss_2.mean().item()
-    loss_3 = loss_3.mean().item()
+    loss_1 = torch.mean(loss_1)
+    loss_2 = torch.mean(loss_2)
+    loss_3 = torch.mean(loss_3)
 
-    return torch.Tensor(3e-7 * loss_1 + 1e-6 * loss_2 + 1e-6 * loss_3).to(device)
+    return (3e-7 * loss_1 + 1e-6 * loss_2 + 1e-6 * loss_3).cuda()
 
 
 
