@@ -147,7 +147,6 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             d_fake = true_or_false(disc(output.float()).cpu().detach().numpy())
             perf_true = d_true.count(1) / len(d_true)
             perf_fake = d_fake.count(0) / len(d_fake)
-            print('Perf: %d / %d' % (perf_true, perf_fake))
             if perf_fake < 0.8 or perf_true < 0.8:
                 train_disc = True
             else:
@@ -161,7 +160,8 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             current_time = time.strftime("%H:%M:%S", t)
             torch.save(net.state_dict(), 'state_converged_{date}_{time}.pth'.format(date=today.strftime("%b-%d-%Y"),
                                                                                     time=current_time))
-
+            raise KeyboardInterrupt('Convergence reached.')
+            
         if i % step_update == 0 and i is not 0:
             end_step = time.perf_counter()
             epoch_times.append(end_step - start_step)
@@ -258,7 +258,7 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
             start_step = time.perf_counter()
 
 
-def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, first_step=True,
+def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
              step_update=100, batch_size=1):
 
     losses = []
@@ -270,7 +270,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
-    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
+    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size*16) # every file contains 16 patches
     PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
     PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
@@ -466,7 +466,7 @@ def check_convergence(dx, dg):
     x_mean = sum(dx) / len(dx)
     g_mean = sum(dg) / len(dg)
     if (0.45 < x_mean < 0.55) and (0.45 < g_mean < 0.55):
-        print('Convergence reached.')
+        #print('Convergence reached.')
         return True
 
     return False
