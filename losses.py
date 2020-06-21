@@ -34,13 +34,17 @@ def LossP(vgg, device, image, target):
 """ GAN generator and discriminator Losses """
 def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
+    criterion = nn.BCELoss()
+    l_true = torch.full((batch_size,), 1., device=device)
+    l_fake = torch.full((batch_size,), 0., device=device)
 
     # Discriminator
     optim_d.zero_grad()
     output_t = discriminator(target).view(-1).clamp(1e-7, 1-1e-7)
     output_d = discriminator(output_g.detach()).view(-1).clamp(1e-7, 1 - 1e-7)
     d_x = output_t.mean().item()
-    loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
+    #loss_d = - 1.0 * torch.log(output_t) - 1.0 * torch.log(torch.full((batch_size,), 1., device=device) - output_d)
+    loss_d = criterion(output_d, l_fake) + criterion(output_t, l_true)
     if train_disc:
         if lossT:
             loss_d *= 2
@@ -50,7 +54,8 @@ def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_d
 
     # Generator
     d_g_z = output_d.mean().item()
-    loss_g = - 1.0 * torch.log(output_d)
+    #loss_g = - 1.0 * torch.log(output_d)
+    loss_g = criterion(output_d, l_true)
     if lossT:
         loss_g *= 2
 
