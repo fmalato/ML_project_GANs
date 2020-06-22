@@ -10,7 +10,7 @@ from datetime import date
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
-from utils import init_weights, print_stats, time_stats, true_or_false
+from utils import init_weights, print_stats, time_stats, true_or_false, compute_patches
 from losses import LossE, LossP, LossA, LossT
 
 
@@ -30,12 +30,11 @@ def trainE(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
 
-        loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
         output = torch.add(output, bicub).clamp(0, 1)
         output = output.to(device)
 
-        loss += LossE(device, output.float(), targets.float())
+        loss = LossE(device, output.float(), targets.float())
 
         losses.append(loss.detach().item())
 
@@ -81,12 +80,12 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         targets = targets.squeeze(0)
         bicub = bicub.squeeze(0)
 
-        loss = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
         output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
         output = output.to(device)
 
-        loss += LossP(vgg, device, output.float(), targets.float())
+        loss = LossP(device, vgg[0](output.float()), vgg[0](targets.float()),
+                      vgg[1](output.float()), vgg[1](targets.float()))
 
         losses.append(loss.detach().item())
 
@@ -210,7 +209,8 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
         output = output.to(device)
 
-        loss += LossP(vgg, device, output.float(), targets.float())
+        loss += LossP(device, vgg[0](output.float()), vgg[0](targets.float()),
+                      vgg[1](output.float()), vgg[1](targets.float()))
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
                                            True, train_disc=train_disc)
         loss += loss_g.mean().item()
@@ -259,7 +259,6 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
 
 def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, current_epoch, epochs=1, train_disc=True,
              step_update=100, batch_size=1):
-
     losses = []
     losses_d = []
     losses_g = []
@@ -284,6 +283,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         bicub = bicub.view((-1, 3, 128, 128))
 
         loss = Tensor(np.zeros(1)).cuda()
+        loss_t = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
         output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
         output = output.to(device)
@@ -292,7 +292,12 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
                                            True, train_disc=train_disc)
         loss += loss_g.mean().item()
-        loss += LossT(vgg_T, device, output.float(), targets.float())
+        patches, patches_target = compute_patches(output, targets)
+        for im, trg in zip(patches, patches_target):
+            loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
+            loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
+            loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+        loss += (loss_t / len(patches)).to(device)
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
@@ -370,15 +375,22 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
+        loss_t = Tensor(np.zeros(1)).cuda()
         output = net(images.float() - PER_CHANNEL_MEANS_32.float())
         output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
         output = output.to(device)
 
-        loss += LossP(vgg, device, output.float(), targets.float())
+        loss += LossP(device, vgg[0](output.float()), vgg[0](targets.float()),
+                      vgg[1](output.float()), vgg[1](targets.float()))
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
                                            True, train_disc=train_disc)
         loss += loss_g.mean().item()
-        loss += LossT(vgg_T, device, output.float(), targets.float())
+        patches, patches_target = compute_patches(output, targets)
+        for im, trg in zip(patches, patches_target):
+            loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
+            loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
+            loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+        loss += (loss_t / len(patches))
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
@@ -463,7 +475,6 @@ def check_convergence(dx, dg):
     x_mean = sum(dx) / len(dx)
     g_mean = sum(dg) / len(dg)
     if (0.45 < x_mean < 0.55) and (0.45 < g_mean < 0.55):
-        #print('Convergence reached.')
         return True
 
     return False
