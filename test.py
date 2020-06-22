@@ -11,6 +11,7 @@ from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
 from FCNN_CPU import FCNN
+from utils import correct_color_shift
 
 
 def test_single(net, img, target, image_name, model_name, test_image):
@@ -30,6 +31,7 @@ def test_single(net, img, target, image_name, model_name, test_image):
     bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
 
     result = np.clip(o + bicub_res, 0., 1.)
+    result = np.clip(correct_color_shift(target, result, samples=100), 0., 1.)
     if result.shape != target.shape:
         w1, h1, c1 = result.shape
         w2, h2, c2 = target.shape
@@ -50,6 +52,11 @@ def test_single(net, img, target, image_name, model_name, test_image):
         ax1.set_title(model_name)
         plt.show()
 
+    """if model_name == 'ENet-E.pth':
+        io.imsave('quality_assessment/E/{x}'.format(x=image_name), result)
+    elif model_name == 'ENet-PAT.pth':
+        io.imsave('quality_assessment/PAT/{x}'.format(x=image_name), result)"""
+
     #print('Image name: %s  PSNR: %f  SSIM: %f' % (image_name, score, sim))
     return score, sim
 
@@ -59,9 +66,9 @@ if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.eval()
     #tests = os.listdir('trained_models/')
-    tests = ['state_1e_P_Jun.pth']
+    tests = ['state_1e_EAT.pth']
     img_path = 'evaluation/Set5/'
-    test_image = 'baby.png'
+    test_image = 'bird.png'
     img_dir = os.listdir(img_path)
     if '.DS_Store' in img_dir:
         os.remove('{p}.DS_Store'.format(p=img_path))

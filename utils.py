@@ -255,3 +255,17 @@ def true_or_false(labels):
             result.append(1)
     return result
 
+
+def correct_color_shift(reference, shifted, samples=50):
+    wr, hr, cr = reference.shape
+    randx = []
+    randy = []
+    # take 15 random pixels
+    for i in range(samples):
+        randx.append(random.randint(0, wr - 1))
+        randy.append(random.randint(0, hr - 1))
+    mean_p = np.zeros(cr)
+    for (x, y) in zip(randx, randy):
+        mean_p += reference[x, y, :] - shifted[x, y, :]
+    mean_p /= samples
+    return shifted + mean_p

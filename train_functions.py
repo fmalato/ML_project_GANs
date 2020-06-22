@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from datetime import date
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
-from dataset_CPU import COCO
+from dataset import COCO
 from utils import init_weights, print_stats, time_stats, true_or_false
 from losses import LossE, LossP, LossA, LossT
 
