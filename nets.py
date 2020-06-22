@@ -39,7 +39,7 @@ class FCNN(nn.Module):
 
         self.conv1 = nn.Sequential(OrderedDict([
             ('c1', nn.Conv2d(self.input_channels, 64, kernel_size=(3, 3), padding=(1, 1))),
-            ('batch1', nn.BatchNorm2d(64)),
+            #('batch1', nn.BatchNorm2d(64)),
             ('relu1', nn.ReLU())
         ]))
         self.residual = nn.Sequential(OrderedDict([
@@ -57,18 +57,18 @@ class FCNN(nn.Module):
         self.upsamp1 = nn.Sequential(OrderedDict([
             ('up1ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
             ('up1conv', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
-            ('batch1', nn.BatchNorm2d(64)),
+            #('batch1', nn.BatchNorm2d(64)),
             ('up1relu', nn.ReLU())
         ]))
         self.upsamp2 = nn.Sequential(OrderedDict([
             ('up2ctrans', nn.UpsamplingNearest2d(scale_factor=2)),
             ('up2conv', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
-            ('batch1', nn.BatchNorm2d(64)),
+            #('batch1', nn.BatchNorm2d(64)),
             ('up2relu', nn.ReLU())
         ]))
         self.conv2 = nn.Sequential(OrderedDict([
             ('c2', nn.Conv2d(64, 64, kernel_size=(3, 3), padding=(1, 1))),
-            ('batch1', nn.BatchNorm2d(64)),
+            #('batch1', nn.BatchNorm2d(64)),
             ('relu2', nn.ReLU())
         ]))
         self.conv3 = nn.Sequential(OrderedDict([
