@@ -31,9 +31,6 @@ class FCNN(nn.Module):
     def __init__(self, input_channels=3, batch_size=1, scale_factor=4):
         super().__init__()
         self.input_channels = input_channels
-        self.bicubic_upsample = nn.Upsample(scale_factor=4, mode='bicubic', align_corners=False)
-        self.tens = transforms.ToTensor()
-        self.pilimg = transforms.ToPILImage()
         self.scale_factor = scale_factor
         self.batch_size = batch_size
 

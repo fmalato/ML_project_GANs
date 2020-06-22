@@ -9,7 +9,6 @@ from PIL import Image, PngImagePlugin
 from skimage import io
 from skimage.transform import resize
 
-from utils import random_crop, square_patch, custom_bicubic
 
 class COCO(Dataset):
 

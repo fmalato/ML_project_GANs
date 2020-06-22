@@ -66,49 +66,6 @@ def crop_central_square(img):
     else:
         return img.crop((floor((w - h) / 2), 0, floor(((w - h) / 2) + h), h))
 
-def load_data(data_folder, batch_size, train, kwargs):
-    transform = {
-        'train': transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.47614917, 0.45001204, 0.40904046],
-                                     std=[0.229, 0.224, 0.225])
-            ]),
-        'test': transforms.Compose(
-            [
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.47614917, 0.45001204, 0.40904046],
-                                     std=[0.229, 0.224, 0.225])
-            ])
-        }
-    data = datasets.ImageFolder(root=data_folder, transform=transform['train' if train else 'test'])
-    data_loader = torch.utils.data.DataLoader(data,
-                                              batch_size=batch_size,
-                                              shuffle=True, **kwargs,
-                                              drop_last=True if train else False)
-    return data_loader
-
-def loadimg(fn, scale=4):
-    try:
-        img = Image.open(fn).convert('RGB')
-    except IOError:
-        return None
-    w, h = img.size
-    img.crop((0, 0, floor(w/scale), floor(h/scale)))
-    img = img.resize((w//scale, h//scale), Image.ANTIALIAS)
-    return np.array(img)/255
-
-
-def square_patch(img_path, size=32):
-    img = Image.open(img_path)
-    patches = []
-    scale = int(img.size[0] / size)
-    # Quadratic time, but since it will be used to scale 64x64 images to 32x32 patches, it's viable.
-    for i in range(scale):
-        for j in range(scale):
-            patches.append(img.crop((i * size, j * size, (i + 1) * size, (j + 1) * size)))
-    return patches
-
 
 def img_square_patch(img, size=32):
     patches = []
@@ -179,6 +136,7 @@ def generate_data():
 
 
 def img_to_pt(chunk_size=16):
+    PngImagePlugin.MAX_TEXT_CHUNK = 1000 * (1024 ** 2)
     if not os.path.exists('data_pt/'):
         os.mkdir('data_pt/')
         os.mkdir('data_pt/train/')
@@ -269,3 +227,27 @@ def correct_color_shift(reference, shifted, samples=50):
         mean_p += reference[x, y, :] - shifted[x, y, :]
     mean_p /= samples
     return shifted + mean_p
+
+
+def compute_patches(image, target, patch_size=16):
+    # Images
+    image = torch.split(image, 1, dim=0)
+    target = torch.split(target, 1, dim=0)
+
+    patches = []
+    patches_target = []
+    batch_size = int(image[0].shape[2] / patch_size) ** 2
+    for el in image:
+        new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
+        new = new.reshape((batch_size, 3, patch_size, patch_size))
+        new = torch.split(new, 1, dim=0)
+        patches += new
+    del image
+    for el in target:
+        new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
+        new = new.reshape((batch_size, 3, patch_size, patch_size))
+        new = torch.split(new, 1, dim=0)
+        patches_target += new
+    del target
+
+    return patches, patches_target
