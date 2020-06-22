@@ -152,7 +152,7 @@ def img_to_pt(chunk_size=16):
             print('Processed: %d/%d' % (i, len(imgs)))
         image = io.imread('data/train/{x}'.format(x=el)) / 255
         target = io.imread('data/target/{x}'.format(x=el)) / 255
-        bicub = resize(image, (128, 128), anti_aliasing=True)
+        bicub = resize(image, (128, 128))
 
         image = np.swapaxes(image, 2, 1)
         target = np.swapaxes(target, 2, 1)
