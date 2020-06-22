@@ -148,7 +148,7 @@ def img_to_pt(chunk_size=16):
     targets = []
     bicubs = []
     for el in imgs:
-        if i % 100 == 0:
+        if i % 1000 == 0:
             print('Processed: %d/%d' % (i, len(imgs)))
         image = io.imread('data/train/{x}'.format(x=el)) / 255
         target = io.imread('data/target/{x}'.format(x=el)) / 255
