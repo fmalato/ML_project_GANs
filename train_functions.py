@@ -57,7 +57,7 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
 
     losses = []
     epoch_times = []
-    vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
+    vgg = [VGGFeatureExtractor().float().cuda(), VGGFeatureExtractor(pool_layer_num=36).float().cuda()]
     PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
     PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
     PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)

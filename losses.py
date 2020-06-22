@@ -18,8 +18,6 @@ def LossP(vgg, device, image, target):
 
     vgg_2 = vgg[0].float()
     vgg_5 = vgg[1].float()
-    vgg_2.cuda()
-    vgg_5.cuda()
 
     extr_feat = vgg_2(image)
     real_feat = vgg_2(target)
@@ -34,9 +32,9 @@ def LossP(vgg, device, image, target):
 """ GAN generator and discriminator Losses """
 def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
-    criterion = nn.BCELoss()
-    l_true = torch.full((batch_size,), random.uniform(0.7, 1.0), device=device)
-    l_fake = torch.full((batch_size,), random.uniform(0.0, 0.3), device=device)
+    criterion = nn.MSELoss()
+    l_true = torch.full((batch_size,), 1.0, device=device)
+    l_fake = torch.full((batch_size,), 0.0, device=device)
 
     # Discriminator
     optim_d.zero_grad()
