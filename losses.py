@@ -66,9 +66,9 @@ def LossT(vgg, device, image, target, patch_size=16):
     image = torch.split(image, 1, dim=0)
     target = torch.split(target, 1, dim=0)
 
-    vgg_1 = vgg[0].cuda()
-    vgg_2 = vgg[1].cuda()
-    vgg_3 = vgg[2].cuda()
+    vgg_1 = vgg[0].float()
+    vgg_2 = vgg[1].float()
+    vgg_3 = vgg[2].float()
     
     patches = []
     patches_target = []

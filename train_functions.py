@@ -346,10 +346,10 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     D_xs = []
     D_gs = []
     epoch_times = []
-    vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
-    vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
-             VGGFeatureExtractor(pool_layer_num=5).float(),
-             VGGFeatureExtractor(pool_layer_num=10).float()]
+    vgg = [VGGFeatureExtractor().float().cuda(), VGGFeatureExtractor(pool_layer_num=36).float().cuda()]
+    vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float().cuda(),
+             VGGFeatureExtractor(pool_layer_num=5).float().cuda(),
+             VGGFeatureExtractor(pool_layer_num=10).float().cuda()]
     PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
     PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
     PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
