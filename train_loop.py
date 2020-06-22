@@ -2,11 +2,11 @@ from train_functions import *
 
 
 # loss choice
-loss_type = 'EA'
+loss_type = 'EAT'
 train, is_adv = which_train(loss_type)
 # net initialization
 # Generator
-batch_size = 8    # Keep in mind: one file contains 16 patches 32x32 already preprocessed
+batch_size = 1    # Keep in mind: one file contains 16 patches 32x32 already preprocessed
 net = FCNN(input_channels=3, batch_size=batch_size)
 net.float()
 if torch.cuda.is_available():
@@ -20,8 +20,8 @@ if is_adv:
     disc.cuda()
     optim_d = optim.Adam(disc.parameters(), lr=1e-4, betas=(0.5, 0.999))
 # data loader
-data = COCO('data/train/', 'data/target/')
-#data = COCO('data_pt/train/', 'data_pt/target/', 'data_pt/bicub/')
+#data = COCO('data/train/', 'data/target/')
+data = COCO('data_pt/train/', 'data_pt/target/', 'data_pt/bicub/')
 data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
 # parameters setting
 epochs = 2

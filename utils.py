@@ -252,4 +252,4 @@ def compute_patches(image, target, patch_size=16):
 
     return patches, patches_target
 
-img_to_pt(chunk_size=8)
+

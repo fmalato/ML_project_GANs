@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from datetime import date
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
-from dataset import COCO
+from dataset_CPU import COCO
 from utils import init_weights, print_stats, time_stats, true_or_false, compute_patches
 from losses import LossE, LossP, LossA, LossT
 
@@ -268,7 +268,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float(),
              VGGFeatureExtractor(pool_layer_num=5).float(),
              VGGFeatureExtractor(pool_layer_num=10).float()]
-    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size*16) # every file contains 16 patches
+    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size*8) # every file contains 16 patches
     PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
     PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
