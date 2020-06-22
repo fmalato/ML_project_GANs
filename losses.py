@@ -16,8 +16,8 @@ def LossE(device, image, target):
 """ Perceptual Loss """
 def LossP(vgg, device, image, target):
 
-    vgg_2 = vgg[0].float()
-    vgg_5 = vgg[1].float()
+    vgg_2 = vgg[0].float().cuda()
+    vgg_5 = vgg[1].float().cuda()
 
     extr_feat = vgg_2(image)
     real_feat = vgg_2(target)
@@ -69,9 +69,9 @@ def LossT(vgg, device, image, target, patch_size=16):
     image = torch.split(image, 1, dim=0)
     target = torch.split(target, 1, dim=0)
 
-    vgg_1 = vgg[0].float()
-    vgg_2 = vgg[1].float()
-    vgg_3 = vgg[2].float()
+    vgg_1 = vgg[0].float().cuda()
+    vgg_2 = vgg[1].float().cuda()
+    vgg_3 = vgg[2].float().cuda()
     
     patches = []
     patches_target = []
