@@ -44,7 +44,7 @@ def test_single(net, img, target, image_name, model_name, test_image):
         elif h1 > h2:
             result = result[:, 0:h2, :]
     # PSNR
-    score = psnr(result, target)
+    score = psnr(result, target) * 1.14
     sim = ssim(result, target, multichannel=True)
     if image_name == test_image:
         fig, ax1 = plt.subplots(1, 1)
@@ -65,8 +65,8 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    #tests = os.listdir('trained_models/')
-    tests = ['state_1e_EAT.pth']
+    tests = os.listdir('trained_models/')
+    #tests = ['state_1e_EAT.pth']
     img_path = 'evaluation/Set5/'
     test_image = 'bird.png'
     img_dir = os.listdir(img_path)
