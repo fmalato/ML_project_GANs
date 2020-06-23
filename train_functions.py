@@ -305,7 +305,8 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
             else:
                 train_disc = False
 
-        conv = check_convergence(D_xs, D_gs)
+        #conv = check_convergence(D_xs, D_gs)
+        conv = False
         # Reaching convergence after just 3 batches sounds like an unfortunate event, not convergence
         if conv and i > int(1000 / (current_epoch + 1)):
             today = date.today()

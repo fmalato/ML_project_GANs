@@ -60,7 +60,7 @@ def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_d
         loss_g = loss_g * 2
         loss_d = loss_d * 2
 
-    return loss_g.cuda(), loss_d.cuda(), d_x, d_g_z
+    return loss_g, loss_d, d_x, d_g_z
 
 
 """ Texture Loss """
