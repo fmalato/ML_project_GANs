@@ -262,14 +262,12 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         bicub = bicub.to(device)
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
-        #targets = Variable(targets.type(Tensor))
         bicub = bicub.view((-1, 3, 128, 128))
 
         loss = torch.cuda.FloatTensor(np.zeros(1))
         loss_t = torch.cuda.FloatTensor(np.zeros(1))
         output = net(images.float())
         output = torch.add(output, bicub).clamp(0, 1)
-        output = Variable(output.type(torch.cuda.FloatTensor))
 
         loss = loss + LossE(device, output.float(), targets.float())
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
