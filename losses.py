@@ -31,28 +31,31 @@ def LossP(device, extr_feat_2, true_feat_2, extr_feat_5, true_feat_5):
 def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
     criterion = nn.BCELoss()
-    l_true = torch.full((batch_size,), 0.9, device=device)
-    l_fake = torch.full((batch_size,), 0.0, device=device)
-    l_true_g = torch.full((batch_size,), 1.0, device=device)
+    l_true = Variable(torch.full((batch_size,), 0.9, device=device), requires_grad=False)
+    l_fake = Variable(torch.full((batch_size,), 0.0, device=device), requires_grad=False)
+    l_true_g = Variable(torch.full((batch_size,), 1.0, device=device), requires_grad=False)
+    output_g = Variable(output_g.type(torch.cuda.FloatTensor))
+    target = Variable(target.type(torch.cuda.FloatTensor))
 
     # Discriminator
     optim_d.zero_grad()
     output_t = discriminator(target).view(-1).clamp(1e-7, 1-1e-7)
     output_d = discriminator(output_g.detach()).view(-1).clamp(1e-7, 1 - 1e-7)
     d_x = output_t.mean().item()
-    loss_d = Variable(- 0.5 * torch.mean(torch.log(output_t)) - 0.5 * torch.mean(torch.log(l_true_g - output_d)), requires_grad=True)
 
-    #loss_d = criterion(output_d, l_fake) + criterion(output_t, l_true)
     if train_disc:
         discriminator.allow_train()
+    # loss_d = Variable(- 0.5 * torch.mean(torch.log(output_t)) - 0.5 * torch.mean(torch.log(l_true_g - output_d)), requires_grad=True)
+    loss_d = Variable(criterion(output_d, l_fake) + criterion(output_t, l_true), requires_grad=True)
+    if train_disc:
         loss_d.mean().backward()
         optim_d.step()
     discriminator.deny_train()
 
     # Generator
     d_g_z = output_d.mean().item()
-    loss_g = Variable(- 0.5 * torch.mean(torch.log(output_d.detach())), requires_grad=True)
-    #loss_g = criterion(output_d, l_true_g)
+    #loss_g = Variable(- 0.5 * torch.mean(torch.log(output_d.detach())), requires_grad=True)
+    loss_g = Variable(criterion(output_d, l_true_g), requires_grad=True)
     if lossT:
         loss_g = loss_g * 2
         loss_d = loss_d * 2
