@@ -253,7 +253,6 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
              VGGFeatureExtractor(pool_layer_num=5).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=10).float().cuda()
              ]
-    Tensor = torch.cuda.FloatTensor
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -266,11 +265,11 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         #targets = Variable(targets.type(Tensor))
         bicub = bicub.view((-1, 3, 128, 128))
 
-        loss = Tensor(np.zeros(1))
-        loss_t = Tensor(np.zeros(1))
+        loss = torch.cuda.FloatTensor(np.zeros(1))
+        loss_t = torch.cuda.FloatTensor(np.zeros(1))
         output = net(images.float())
         output = torch.add(output, bicub).clamp(0, 1)
-        output = Variable(output.type(Tensor))
+        output = Variable(output.type(torch.cuda.FloatTensor))
 
         loss = loss + LossE(device, output.float(), targets.float())
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
@@ -285,7 +284,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
                 loss_t = loss_t + 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
                 loss_t = loss_t + 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
             idx += 1
-        loss = loss + Tensor(loss_t / len(patches))
+        loss = loss + loss_t / len(patches)
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
