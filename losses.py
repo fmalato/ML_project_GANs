@@ -30,8 +30,8 @@ def LossP(device, extr_feat_2, true_feat_2, extr_feat_5, true_feat_5):
 def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_disc=True):
     batch_size = output_g.size(0)
     criterion = nn.BCELoss()
-    l_true = torch.full((batch_size,), random.uniform(0.7, 1.0), device=device)
-    l_fake = torch.full((batch_size,), random.uniform(0.0, 0.3), device=device)
+    l_true = torch.full((batch_size,), 0.9, device=device)
+    l_fake = torch.full((batch_size,), 0.0, device=device)
     l_true_g = torch.full((batch_size,), 1.0, device=device)
 
     # Discriminator
@@ -43,8 +43,10 @@ def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_d
 
     #loss_d = criterion(output_d, l_fake) + criterion(output_t, l_true)
     if train_disc:
+        discriminator.allow_train()
         loss_d.mean().backward()
         optim_d.step()
+    discriminator.deny_train()
 
     # Generator
     d_g_z = output_d.mean().item()

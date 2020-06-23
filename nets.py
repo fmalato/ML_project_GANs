@@ -143,6 +143,14 @@ class Discriminator(nn.Module):
 
         return x
 
+    def deny_train(self):
+        for param in self.parameters():
+            param.requires_grad = False
+
+    def allow_train(self):
+        for param in self.parameters():
+            param.requires_grad = True
+
 
 class VGGFeatureExtractor(nn.Module):
 
