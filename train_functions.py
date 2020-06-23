@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch import Tensor
 from torch.utils.data import DataLoader
 from datetime import date
+from torch.autograd import Variable
 
 from nets import FCNN, VGGFeatureExtractor, Discriminator
 from dataset import COCO
@@ -262,28 +263,29 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         bicub = bicub.to(device)
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
+        targets = Variable(targets.type(torch.cuda.Tensor))
         bicub = bicub.view((-1, 3, 128, 128))
 
-        loss = Tensor(np.zeros(1)).cuda()
-        loss_t = Tensor(np.zeros(1)).cuda()
+        loss = Variable(np.zeros(1), requires_grad=True)
+        loss_t = Variable(np.zeros(1), requires_grad=True)
         output = net(images.float())
         output = torch.add(output, bicub).clamp(0, 1)
-        output = output.to(device)
+        output = Variable(output.type(torch.cuda.Tensor))
 
-        loss += LossE(device, output.float(), targets.float())
+        loss = loss + Variable(LossE(device, output.float(), targets.float()), requires_grad=True)
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
                                            True, train_disc=train_disc)
-        loss += loss_g.mean().item()
+        loss = loss + Variable(loss_g.mean().item(), requires_grad=True)
         patches, patches_target = compute_patches(output, targets)
         idx = 0
         for im, trg in zip(patches, patches_target):
             # One patch every 16 is enough, otherwise it will slow down computation too much
             if idx % 16 == 0:
-                loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
-                loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
-                loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+                loss_t = loss_t + Variable(3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float())), requires_grad=True)
+                loss_t = loss_t + Variable(1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float())), requires_grad=True)
+                loss_t = loss_t + Variable(1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float())), requires_Grad=True)
             idx += 1
-        loss += (loss_t / len(patches)).to(device)
+        loss = loss + Variable((loss_t / len(patches)).to(device), requires_grad=True)
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())

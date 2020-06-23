@@ -34,8 +34,6 @@ def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_d
     l_true = Variable(torch.full((batch_size,), 0.9, device=device), requires_grad=False)
     l_fake = Variable(torch.full((batch_size,), 0.0, device=device), requires_grad=False)
     l_true_g = Variable(torch.full((batch_size,), 1.0, device=device), requires_grad=False)
-    output_g = Variable(output_g.type(torch.cuda.FloatTensor))
-    target = Variable(target.type(torch.cuda.FloatTensor))
 
     # Discriminator
     optim_d.zero_grad()
