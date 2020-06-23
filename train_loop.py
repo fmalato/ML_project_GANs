@@ -18,15 +18,15 @@ if is_adv:
     disc = Discriminator()
     disc.float()
     disc.cuda()
-    optim_d = optim.Adam(disc.parameters(), lr=1e-4, betas=(0.5, 0.999))
+    optim_d = optim.Adam(disc.parameters(), lr=1e-4, betas=(0.9, 0.999))
 # data loader
 #data = COCO('data/train/', 'data/target/')
 data = COCO('data_pt/train/', 'data_pt/target/', 'data_pt/bicub/')
 data_loader = DataLoader(data, batch_size=batch_size, shuffle=True, num_workers=4)
 # parameters setting
-epochs = 2
+epochs = 1
 lr = 1e-4
-betas = (0.5, 0.999)
+betas = (0.9, 0.999)
 optim_g = optim.Adam(net.parameters(), lr=lr, betas=betas)
 load_weights = False
 state_dict = 'state_1e_E'
