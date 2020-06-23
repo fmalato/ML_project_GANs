@@ -4,6 +4,7 @@ import re
 import torch
 import torch.optim as optim
 
+from torch import Tensor
 from torch.utils.data import DataLoader
 from datetime import date
 from torch.autograd import Variable
@@ -102,7 +103,7 @@ def trainEA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
     D_xs = []
     D_gs = []
     epoch_times = []
-    Tensor = torch.cuda.FloatTensor
+
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
 
@@ -177,7 +178,7 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
     D_gs = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
-    Tensor = torch.cuda.FloatTensor
+
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
 
@@ -264,10 +265,11 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
 
-        loss = torch.cuda.FloatTensor(np.zeros(1))
-        loss_t = torch.cuda.FloatTensor(np.zeros(1))
+        loss = Tensor(np.zeros(1)).cuda()
+        loss_t = Tensor(np.zeros(1)).cuda()
         output = net(images.float())
         output = torch.add(output, bicub).clamp(0, 1)
+
 
         loss = loss + LossE(device, output.float(), targets.float())
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
@@ -278,11 +280,11 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         for im, trg in zip(patches, patches_target):
             # One patch every 16 is enough, otherwise it will slow down computation too much
             if idx % 16 == 0:
-                loss_t = loss_t + 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
-                loss_t = loss_t + 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
-                loss_t = loss_t + 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+                loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
+                loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
+                loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
             idx += 1
-        loss = loss + loss_t / len(patches)
+        loss = loss + (loss_t / len(patches)).to(device)
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
@@ -340,7 +342,7 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=5).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=10).float().cuda()]
-    Tensor = torch.cuda.FloatTensor
+
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
         
