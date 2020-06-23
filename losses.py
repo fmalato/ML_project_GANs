@@ -5,6 +5,7 @@ import numpy as np
 
 from utils import gram_matrix, true_or_false
 from torch.autograd import Variable
+from torch import Tensor
 
 
 """ Baseline MSE Loss """
@@ -23,6 +24,7 @@ def LossP(device, extr_feat_2, true_feat_2, extr_feat_5, true_feat_5):
     # PA and PAT
     #return 2e-1*loss_2 + 2e-2*loss_5
     # P
+
     return 2e-1 * loss_2 + \
            loss_5
 
@@ -44,16 +46,16 @@ def LossA(discriminator, device, output_g, target, optim_d, lossT=False, train_d
     if train_disc:
         discriminator.allow_train()
     # loss_d = Variable(- 0.5 * torch.mean(torch.log(output_t)) - 0.5 * torch.mean(torch.log(l_true_g - output_d)), requires_grad=True)
-    loss_d = Variable(criterion(output_d, l_fake) + criterion(output_t, l_true), requires_grad=True)
+    loss_d = Variable(Tensor(criterion(output_d, l_fake) + criterion(output_t, l_true)), requires_grad=True)
     if train_disc:
-        loss_d.mean().backward()
+        loss_d.backward()
         optim_d.step()
     discriminator.deny_train()
 
     # Generator
     d_g_z = output_d.mean().item()
     #loss_g = Variable(- 0.5 * torch.mean(torch.log(output_d.detach())), requires_grad=True)
-    loss_g = Variable(criterion(output_d, l_true_g), requires_grad=True)
+    loss_g = Variable(Tensor(criterion(output_d, l_true_g)), requires_grad=True)
     if lossT:
         loss_g = loss_g * 2
         loss_d = loss_d * 2
