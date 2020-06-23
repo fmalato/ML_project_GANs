@@ -57,9 +57,6 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
     losses = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float().cuda(), VGGFeatureExtractor(pool_layer_num=36).float().cuda()]
-    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
-    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -70,18 +67,13 @@ def trainP(net, disc, optim_g, optim_d, device, data_loader, start_step, current
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
-        # it may happen only in the last iteration of each epoch
-        if images.shape[0] != batch_size:
-            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
-            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         images = images.squeeze(0)
         targets = targets.squeeze(0)
         bicub = bicub.squeeze(0)
 
-        output = net(images.float() - PER_CHANNEL_MEANS_32.float())
-        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
+        output = net(images.float())
+        output = torch.add(output, bicub).clamp(0, 1)
         output = output.to(device)
 
         loss = LossP(device, vgg[0](output.float()), vgg[0](targets.float()),
@@ -185,9 +177,6 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
     D_gs = []
     epoch_times = []
     vgg = [VGGFeatureExtractor().float(), VGGFeatureExtractor(pool_layer_num=36).float()]
-    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
-    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -198,15 +187,10 @@ def trainPA(net, disc, optim_g, optim_d, device, data_loader, start_step, curren
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
-        # it may happen only in the last iteration of each epoch
-        if images.shape[0] != batch_size:
-            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
-            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
-        output = net(images.float() - PER_CHANNEL_MEANS_32.float())
-        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
+        output = net(images.float())
+        output = torch.add(output, bicub).clamp(0, 1)
         output = output.to(device)
 
         loss += LossP(device, vgg[0](output.float()), vgg[0](targets.float()),
@@ -269,9 +253,6 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
              VGGFeatureExtractor(pool_layer_num=5).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=10).float().cuda()
              ]
-    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size*8) # every file contains 16 patches
-    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -282,16 +263,11 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
-        # it may happen only in the last iteration of each epoch
-        if images.shape[0] != batch_size:
-            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
-            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         loss_t = Tensor(np.zeros(1)).cuda()
-        output = net(images.float() - PER_CHANNEL_MEANS_32.float())
-        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
+        output = net(images.float())
+        output = torch.add(output, bicub).clamp(0, 1)
         output = output.to(device)
 
         loss += LossE(device, output.float(), targets.float())
@@ -365,9 +341,6 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=5).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=10).float().cuda()]
-    PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size)
-    PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-    PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
     for i, (images, targets, bicub) in enumerate(data_loader):
         optim_g.zero_grad()
@@ -378,16 +351,11 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
-        # it may happen only in the last iteration of each epoch
-        if images.shape[0] != batch_size:
-            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
-            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
-            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         loss_t = Tensor(np.zeros(1)).cuda()
-        output = net(images.float() - PER_CHANNEL_MEANS_32.float())
-        output = torch.add(torch.add(output, bicub).clamp(0, 1), PER_CHANNEL_MEANS_128.float())
+        output = net(images.float())
+        output = torch.add(output, bicub).clamp(0, 1)
         output = output.to(device)
 
         loss += LossP(device, vgg[0](output.float()), vgg[0](targets.float()),
