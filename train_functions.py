@@ -267,7 +267,8 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
     epoch_times = []
     vgg_T = [VGGFeatureExtractor(pool_layer_num=0).float().cuda(),
              VGGFeatureExtractor(pool_layer_num=5).float().cuda(),
-             VGGFeatureExtractor(pool_layer_num=10).float().cuda()]
+             VGGFeatureExtractor(pool_layer_num=10).float().cuda()
+             ]
     PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(batch_size*8) # every file contains 16 patches
     PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
     PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
@@ -293,11 +294,15 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
                                            True, train_disc=train_disc)
         loss += loss_g.mean().item()
         patches, patches_target = compute_patches(output, targets)
+        idx = 0
         for im, trg in zip(patches, patches_target):
-            loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
-            loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
-            loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+            # One patch every 16 is enough, otherwise it will slow down computation too much
+            if idx % 16 == 0:
+                loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
+                loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
+                loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
         loss += (loss_t / len(patches)).to(device)
+        idx = 0
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
@@ -386,11 +391,16 @@ def trainPAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
                                            True, train_disc=train_disc)
         loss += loss_g.mean().item()
         patches, patches_target = compute_patches(output, targets)
+        idx = 0
         for im, trg in zip(patches, patches_target):
-            loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
-            loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
-            loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+            # One patch every 16 is enough, otherwise it will slow down computation too much
+            if idx % 16 == 0:
+                loss_t += 3e-7 * LossT(device, vgg_T[0](im.float()), vgg_T[0](trg.float()))
+                loss_t += 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
+                loss_t += 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
+            idx += 1
         loss += (loss_t / len(patches))
+        idx = 0
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
