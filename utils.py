@@ -229,7 +229,7 @@ def correct_color_shift(reference, shifted, samples=50):
     return shifted + mean_p
 
 
-def compute_patches(image, target, patch_size=16):
+def compute_patches(image, target, patch_size=16, step=8):
     # Images
     image = torch.split(image, 1, dim=0)
     target = torch.split(target, 1, dim=0)
@@ -241,13 +241,17 @@ def compute_patches(image, target, patch_size=16):
         new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
         new = new.reshape((batch_size, 3, patch_size, patch_size))
         new = torch.split(new, 1, dim=0)
-        patches += new
+        for idx in range(len(new)):
+            if idx % step == 0:
+                patches.append(new[idx])
     del image
     for el in target:
         new = el.unfold(1, 3, 3).unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
         new = new.reshape((batch_size, 3, patch_size, patch_size))
         new = torch.split(new, 1, dim=0)
-        patches_target += new
+        for idx in range(len(new)):
+            if idx % step == 0:
+                patches.append(new[idx])
     del target
 
     return patches, patches_target
