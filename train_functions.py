@@ -275,7 +275,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         loss = loss + LossE(device, output.float(), targets.float())
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
                                            True, train_disc=train_disc)
-        loss = loss + Tensor(loss_g)
+        loss = loss + loss_g.mean().item()
         patches, patches_target = compute_patches(output, targets)
         idx = 0
         for im, trg in zip(patches, patches_target):
