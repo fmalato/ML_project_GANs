@@ -29,8 +29,8 @@ def test_single(net, img, target, image_name, model_name, test_image):
     o = np.swapaxes(o, 1, 2)
 
     bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
-    result = np.clip(o + bicub_res + np.array([0.47614917, 0.45001204, 0.40904046]), 0., 1.)
-    #result = np.clip(correct_color_shift(target, result, samples=100), 0., 1.)
+    result = np.clip(o + bicub_res, 0., 1.)
+    result = np.clip(correct_color_shift(target, result, samples=100), 0., 1.)
     if result.shape != target.shape:
         w1, h1, c1 = result.shape
         w2, h2, c2 = target.shape
@@ -64,8 +64,8 @@ if __name__ == '__main__':
 
     net = FCNN(input_channels=3)
     net.eval()
-    #tests = os.listdir('trained_models/')
-    tests = ['state_1e_EAT.pth', 'state_2e_P.pth']
+    tests = os.listdir('trained_models/')
+    #tests = ['state_1e_EAT.pth', 'state_2e_P.pth']
     img_path = 'evaluation/Set5/'
     test_image = 'bird.png'
     img_dir = os.listdir(img_path)
@@ -112,7 +112,7 @@ if __name__ == '__main__':
                 target = target[:, 0:h1, :]
             elif h1 > h2:
                 bicub = bicub[:, 0:h2, :]
-        avg_psnr += psnr(bicub, target) * 1.10326
+        avg_psnr += psnr(bicub, target)
     avg_psnr = avg_psnr / len(img_dir)
     print('Average psnr score is: %f' % avg_psnr)
     fig, ax1 = plt.subplots(1, 1)

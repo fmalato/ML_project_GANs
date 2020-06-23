@@ -14,6 +14,7 @@ class COCO(Dataset):
 
     def __init__(self, image_paths, target_paths, bicubs_path, scale_factor=4, patch_size=32):   # initial logic happens like transform
 
+        super().__init__()
         self.image_paths = image_paths
         self.target_paths = target_paths
         self.bicubs_path = bicubs_path
