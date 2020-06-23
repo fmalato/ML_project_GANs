@@ -272,10 +272,10 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         output = torch.add(output, bicub).clamp(0, 1)
         output = Variable(output.type(Tensor))
 
-        loss = loss + Variable(LossE(device, output.float(), targets.float()), requires_grad=True)
+        loss = loss + LossE(device, output.float(), targets.float())
         loss_g, loss_d, D_x, D_G_z = LossA(disc, device, output.float(), targets.float(), optim_d,
                                            True, train_disc=train_disc)
-        loss = loss + Variable(Tensor(loss_g), requires_grad=True)
+        loss = loss + Tensor(loss_g)
         patches, patches_target = compute_patches(output, targets)
         idx = 0
         for im, trg in zip(patches, patches_target):
@@ -285,7 +285,7 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
                 loss_t = loss_t + 1e-6 * LossT(device, vgg_T[1](im.float()), vgg_T[1](trg.float()))
                 loss_t = loss_t + 1e-6 * LossT(device, vgg_T[2](im.float()), vgg_T[2](trg.float()))
             idx += 1
-        loss = loss + Variable(Tensor(loss_t / len(patches)), requires_grad=True)
+        loss = loss + Tensor(loss_t / len(patches))
 
         losses.append(loss.detach().item())
         losses_d.append(loss_d.detach().mean().item())
