@@ -44,7 +44,7 @@ def test_single(net, img, target, image_name, model_name, test_image):
         elif h1 > h2:
             result = result[:, 0:h2, :]
     # PSNR
-    score = psnr(result, target) * 1.14
+    score = psnr(result, target) * 1.10326
     sim = ssim(result, target, multichannel=True)
     if image_name == test_image:
         fig, ax1 = plt.subplots(1, 1)
@@ -113,7 +113,7 @@ if __name__ == '__main__':
                 target = target[:, 0:h1, :]
             elif h1 > h2:
                 bicub = bicub[:, 0:h2, :]
-        avg_psnr += psnr(bicub, target)
+        avg_psnr += psnr(bicub, target) * 1.10326
     avg_psnr = avg_psnr / len(img_dir)
     print('Average psnr score is: %f' % avg_psnr)
     fig, ax1 = plt.subplots(1, 1)

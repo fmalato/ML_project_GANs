@@ -282,6 +282,11 @@ def trainEAT(net, disc, optim_g, optim_d, device, data_loader, start_step, curre
         images = images.view((-1, 3, 32, 32))
         targets = targets.view((-1, 3, 128, 128))
         bicub = bicub.view((-1, 3, 128, 128))
+        # it may happen only in the last iteration of each epoch
+        if images.shape[0] != batch_size:
+            PER_CHANNEL_MEANS_32, PER_CHANNEL_MEANS_128 = generate_means(images.shape[0])
+            PER_CHANNEL_MEANS_32 = PER_CHANNEL_MEANS_32.to(device)
+            PER_CHANNEL_MEANS_128 = PER_CHANNEL_MEANS_128.to(device)
 
         loss = Tensor(np.zeros(1)).cuda()
         loss_t = Tensor(np.zeros(1)).cuda()
