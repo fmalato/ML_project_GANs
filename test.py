@@ -30,7 +30,7 @@ def test_single(net, img, target, image_name, model_name, test_image):
 
     bicub_res = rescale(img, (4, 4, 1), anti_aliasing=True)
     result = np.clip(o + bicub_res, 0., 1.)
-    #result = np.clip(correct_color_shift(target, result, samples=100), 0., 1.)
+    result = np.clip(correct_color_shift(target, result, samples=100), 0., 1.)
     if result.shape != target.shape:
         w1, h1, c1 = result.shape
         w2, h2, c2 = target.shape
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.eval()
     tests = os.listdir('trained_models/')
-    #tests = ['state_converged_PA.pth']
+    tests = ['state_2e_P.pth']
     img_path = 'evaluation/Set5/'
     test_image = 'bird.png'
     img_dir = os.listdir(img_path)

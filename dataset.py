@@ -44,7 +44,7 @@ class COCO(Dataset):
         target = np.swapaxes(target, 1, 0)
         bicub = np.swapaxes(bicub, 1, 0)"""
 
-        return self.transforms(image), self.transforms(target), self.transforms(bicub)
+        return image, target, bicub
 
     def __len__(self):  # return count of sample we have
 

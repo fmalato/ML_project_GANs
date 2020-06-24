@@ -66,6 +66,13 @@ def crop_central_square(img):
     else:
         return img.crop((floor((w - h) / 2), 0, floor(((w - h) / 2) + h), h))
 
+def crop_central_square_np(img):
+    w, h, c = img.shape
+    if w < h:
+        return img[0:w, floor((h - w) / 2):floor(((h - w) / 2) + w), :]
+    else:
+        return img[floor((w - h) / 2):floor(((w - h) / 2) + h), 0:h, :]
+
 
 def img_square_patch(img, size=32):
     patches = []
