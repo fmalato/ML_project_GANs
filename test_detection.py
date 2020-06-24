@@ -81,7 +81,7 @@ def get_prediction(image, threshold):
     return pred_boxes, pred_class
 
 
-def object_detection_api(img, threshold=0.5, rect_th=3, text_size=1.5, text_th=3, downscale=False):
+def object_detection_api(img, threshold=0.5, rect_th=3, text_size=1.5, text_th=3, downscale=False, folder=''):
     """img = cv2.imread(img_path)  # Read image with cv2
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert to RGB"""
     if downscale:
@@ -89,17 +89,18 @@ def object_detection_api(img, threshold=0.5, rect_th=3, text_size=1.5, text_th=3
         rect_th = 1
         text_th = 1
     boxes, pred_cls = get_prediction(img, threshold)  # Get predictions
-    for i in range(len(boxes)):
-        cv2.rectangle(img, boxes[i][0], boxes[i][1], color=(0, 255, 0),
-                  thickness=rect_th)  # Draw Rectangle with the coordinates
-        cv2.putText(img, pred_cls[i], boxes[i][0], cv2.FONT_HERSHEY_SIMPLEX, text_size, (0, 255, 0),
-                thickness=text_th)  # Write the prediction class
-    #print('Classes for {x}: {y}'.format(x=img_path, y=pred_cls))
+    if len(boxes) > 0:
+        for i in range(len(boxes)):
+            cv2.rectangle(img, boxes[i][0], boxes[i][1], color=(0, 255, 0),
+                          thickness=rect_th)  # Draw Rectangle with the coordinates
+            cv2.putText(img, pred_cls[i], boxes[i][0], cv2.FONT_HERSHEY_SIMPLEX, text_size, (0, 255, 0),
+                        thickness=text_th)  # Write the prediction class
     plt.figure()  # display the output image
     plt.imshow(img)
     plt.xticks([])
     plt.yticks([])
     plt.show()
+    #plt.imsave('results_detection/{f}/{x}.jpg'.format(f=folder, x='maybe_dog'), img)
 
 
 """
@@ -144,11 +145,12 @@ COCO_INSTANCE_CATEGORY_NAMES = [
     'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
 
-# Possible good images to show: 0, 2, 1792!,
+# Possible good images to show: 0, 1792!, 2915!!
 coco = os.listdir('evaluation/val2017/')
 tens = transforms.ToTensor()
 idxs = [random.randint(0, len(coco) - 1) for i in range(2)]
 print(idxs)
+idxs = [127]
 images_norm = [io.imread('evaluation/val2017/{x}'.format(x=coco[i])) for i in idxs]
 images_down = []
 print('Downscaling images...')
@@ -187,13 +189,13 @@ for img in images_down:
     images_PAT.append(np.array(result, dtype=np.uint8))
 print('Testing downscaled images')
 for idx in images_down:
-    object_detection_api(idx, threshold=0.8, downscale=True)
+    object_detection_api(idx, threshold=0.8, downscale=True, folder='downscaled')
 print('Testing normal images')
 for idx in images_norm:
-    object_detection_api(idx, threshold=0.8, downscale=False)
+    object_detection_api(idx, threshold=0.8, downscale=False, folder='originals')
 print('Testing ENet-E images')
 for idx in images_E:
-    object_detection_api(idx, threshold=0.8, downscale=False)
+    object_detection_api(idx, threshold=0.8, downscale=False, folder='ENet-E')
 print('Testing ENet-PAT images')
 for idx in images_PAT:
-    object_detection_api(idx, threshold=0.8, downscale=False)
+    object_detection_api(idx, threshold=0.8, downscale=False, folder='ENet-PAT')

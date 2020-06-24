@@ -50,6 +50,7 @@ def test_single(net, img, target, image_name, model_name, test_image):
         ax1.imshow(result)
         ax1.set_title(model_name)
         plt.show()
+        #plt.imsave('results_reconstr/{m}/{n}'.format(m=os.path.splitext(model_name)[0], n=image_name), result)
 
     """if model_name == 'ENet-E.pth':
         io.imsave('quality_assessment/E/{x}'.format(x=image_name), result)
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.eval()
     tests = os.listdir('trained_models/')
-    tests = ['state_2e_P.pth']
+    #tests = ['ENet-P.pth']
     img_path = 'evaluation/Set5/'
     test_image = 'bird.png'
     img_dir = os.listdir(img_path)
@@ -119,3 +120,4 @@ if __name__ == '__main__':
     ax1.set_title('Bicubic interpolation')
     ax1.imshow(bicub_to_show)
     plt.show()
+    plt.imsave('results_reconstr/bicubic/bird.png', bicub_to_show)
