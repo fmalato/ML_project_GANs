@@ -21,7 +21,7 @@ def LossP(device, extr_feat_2, true_feat_2, extr_feat_5, true_feat_5):
     loss_2 = torch.mean((extr_feat_2 - true_feat_2) ** 2)
     loss_5 = torch.mean((extr_feat_5 - true_feat_5) ** 2)
 
-    return 2e-1*loss_2 + 2e-1*loss_5
+    return 2e-1*loss_2 + 2e-2*loss_5
 
 
 """ GAN generator and discriminator Losses """

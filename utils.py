@@ -264,11 +264,11 @@ def compute_patches(image, target, patch_size=16, step=8):
     return patches, patches_target
 
 
-import matplotlib.pyplot as plt
+"""import matplotlib.pyplot as plt
 
 folders = ['bicubic', 'ENet-E', 'ENet-P', 'ENet-EA', 'ENet-PA', 'ENet-EAT', 'ENet-PAT']
 images = []
 for folder in folders:
-    images.append(plt.imread('results_reconstr/{x}/bird.png'.format(x=folder))[2:146, 118:262, :])
+    images.append(plt.imread('results_reconstr/{x}/bird.png'.format(x=folder))[2:146, 118:262, :])"""
 
 

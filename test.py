@@ -66,7 +66,7 @@ if __name__ == '__main__':
     net = FCNN(input_channels=3)
     net.eval()
     tests = os.listdir('trained_models/')
-    #tests = ['ENet-P.pth']
+    tests = ['state_1e_P.pth']
     img_path = 'evaluation/Set5/'
     test_image = 'bird.png'
     img_dir = os.listdir(img_path)
@@ -120,4 +120,4 @@ if __name__ == '__main__':
     ax1.set_title('Bicubic interpolation')
     ax1.imshow(bicub_to_show)
     plt.show()
-    plt.imsave('results_reconstr/bicubic/bird.png', bicub_to_show)
+    #plt.imsave('results_reconstr/bicubic/bird.png', bicub_to_show)
